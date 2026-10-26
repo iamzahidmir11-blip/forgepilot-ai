@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ForgePilot AI</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#111;color:#f5f5f5;min-height:100vh}
+header{padding:18px 20px;border-bottom:1px solid #303030;font-weight:700}
+header span{color:#999;font-weight:400;font-size:13px;display:block;margin-top:4px}
+main{max-width:850px;margin:auto;padding:24px 16px 120px}
+#welcome{margin:13vh auto 35px;text-align:center}
+h1{font-size:clamp(28px,6vw,42px);margin:0 0 10px}
+p{color:#aaa}
+#chat{display:flex;flex-direction:column;gap:16px}
+.msg{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;padding:15px 17px;border-radius:16px;background:#202020}
+.user{align-self:flex-end;max-width:90%;background:#303030}
+.ai{align-self:stretch}
+#composer{position:fixed;bottom:0;left:0;right:0;padding:14px;background:#111;border-top:1px solid #303030}
+form{display:flex;gap:10px;max-width:850px;margin:auto}
+textarea{flex:1;resize:vertical;min-height:52px;max-height:180px;background:#202020;color:white;border:1px solid #444;border-radius:14px;padding:14px;font:inherit}
+button{border:0;border-radius:12px;background:#f5f5f5;color:#111;padding:0 19px;font-weight:700}
+button:disabled{opacity:.5}
+#status{max-width:850px;margin:8px auto 0;color:#aaa;font-size:12px}
+</style>
+</head>
+<body>
+<header>ForgePilot AI <span>Your AI coding workspace</span></header>
+<main>
+<section id="welcome">
+<h1>Build something great.</h1>
+<p>Ask questions, understand code, and plan your next build.</p>
+</section>
+<section id="chat" aria-live="polite"></section>
+</main>
+<div id="composer">
+<form id="form">
+<textarea id="message" placeholder="Ask ForgePilot anything..." required></textarea>
+<button id="send" type="submit">Send</button>
+</form>
+<div id="status">Ready</div>
+</div>
+<script>
+const form = document.querySelector("#form");
+const input = document.querySelector("#message");
+const chat = document.querySelector("#chat");
+const send = document.querySelector("#send");
+const status = document.querySelector("#status");
+document.querySelector("#welcome");
+function addMessage(text, role) {
+  const el = document.createElement("div");
+  el.className = "msg " + role;
+  el.textContent = text;
+  chat.appendChild(el);
+  el.scrollIntoView({behavior:"smooth",block:"end"});
+  return el;
+}
+form.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = input.value.trim();
+  if (!message || send.disabled) return;
+  document.querySelector("#welcome").style.display = "none";
+  addMessage(message, "user");
+  input.value = "";
+  send.disabled = true;
+  status.textContent = "ForgePilot is thinking...";
+  const reply = addMessage("Working...", "ai");
+  try {
+    const response = await fetch("/api/chat", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message})
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Request failed");
+    reply.textContent = data.reply;
+    status.textContent = "Ready";
+  } catch (error) {
+    reply.textContent = "Error: " + error.message;
+    status.textContent = "Request failed";
+  } finally {
+    send.disabled = false;
+    input.focus();
+  }
+});
+input.addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    form.requestSubmit();
+  }
+});
+</script>
+</body>
+</html>
