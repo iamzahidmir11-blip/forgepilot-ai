@@ -1,96 +1,559 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ForgePilot AI</title>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111111"><title>ForgePilot AI</title>
 <style>
-:root{color-scheme:dark;font-family:system-ui,sans-serif}
-*{box-sizing:border-box}
-body{margin:0;background:#111;color:#f5f5f5;min-height:100vh}
-header{padding:18px 20px;border-bottom:1px solid #303030;font-weight:700}
-header span{color:#999;font-weight:400;font-size:13px;display:block;margin-top:4px}
-main{max-width:850px;margin:auto;padding:24px 16px 120px}
-#welcome{margin:13vh auto 35px;text-align:center}
-h1{font-size:clamp(28px,6vw,42px);margin:0 0 10px}
-p{color:#aaa}
-#chat{display:flex;flex-direction:column;gap:16px}
-.msg{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;padding:15px 17px;border-radius:16px;background:#202020}
-.user{align-self:flex-end;max-width:90%;background:#303030}
-.ai{align-self:stretch}
-#composer{position:fixed;bottom:0;left:0;right:0;padding:14px;background:#111;border-top:1px solid #303030}
-form{display:flex;gap:10px;max-width:850px;margin:auto}
-textarea{flex:1;resize:vertical;min-height:52px;max-height:180px;background:#202020;color:white;border:1px solid #444;border-radius:14px;padding:14px;font:inherit}
-button{border:0;border-radius:12px;background:#f5f5f5;color:#111;padding:0 19px;font-weight:700}
-button:disabled{opacity:.5}
-#status{max-width:850px;margin:8px auto 0;color:#aaa;font-size:12px}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+:root{font-family:"DM Sans",Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color-scheme:dark;--bg:#09090a;--fg:#f5f5f6;--muted:#929298;--line:#ffffff18;--glass:#ffffff0a;--glass2:#ffffff10;--solid:#141416;--input:#101012;--shadow:0 20px 80px #0008;--blur:blur(28px)}
+html[data-theme=light]{color-scheme:light;--bg:#efeff1;--fg:#171719;--muted:#777780;--line:#00000012;--glass:#ffffff78;--glass2:#ffffffb5;--solid:#f8f8fa;--input:#ffffffa8;--shadow:0 20px 70px #00000012}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);height:100%;min-height:0;overflow:hidden;transition:background .3s,color .3s}button,input,textarea{font:inherit}button{color:inherit;cursor:pointer}button:focus-visible,textarea:focus-visible{outline:2px solid var(--muted);outline-offset:3px}
+.app{height:100vh;height:100svh;height:100dvh;min-height:0;display:flex;flex-direction:column;position:relative;isolation:isolate;background:radial-gradient(ellipse at 50% -30%,#ffffff10,transparent 55%),var(--bg)}
+.ambient{position:absolute;inset:0;pointer-events:none;z-index:-1;overflow:hidden}.ambient:before,.ambient:after{content:"";position:absolute;width:42vw;height:42vw;border-radius:50%;filter:blur(100px);opacity:.12}.ambient:before{background:#aaa;top:-25vw;left:25%}.ambient:after{background:#777;bottom:-35vw;right:-10vw}
+.topbar{height:76px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(14px,3vw,38px);position:relative;z-index:5}
+.topside{display:flex;align-items:center;gap:12px}.brand{display:flex;align-items:center;gap:10px;font-family:Manrope,sans-serif;font-size:15px;font-weight:800;letter-spacing:-.5px}.mark{width:28px;height:28px;border-radius:10px;border:1px solid var(--line);background:linear-gradient(145deg,#ffffff25,#ffffff03);backdrop-filter:var(--blur);display:grid;place-items:center}.mark svg{width:15px;height:15px}
+.glassbtn{width:42px;height:42px;border:1px solid var(--line);border-radius:15px;background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);display:grid;place-items:center;transition:transform .2s,background .2s,border-color .2s;box-shadow:inset 0 1px #ffffff0a}.glassbtn:hover{background:var(--glass2);transform:translateY(-1px);border-color:#ffffff30}.glassbtn svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.brandnote{font-size:10px;letter-spacing:1.6px;color:var(--muted);font-weight:700;margin-left:3px}
+.stage{height:auto;flex:1 1 0;min-height:0;display:flex;flex-direction:column;min-width:0}.conversation{flex:1 1 0;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scroll-behavior:smooth;padding:0 18px}.inner{width:min(780px,100%);margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.welcome{margin:auto 0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:38px 0 45px;animation:rise .65s ease both}.welcome-orb{width:74px;height:74px;border-radius:26px;border:1px solid var(--line);background:linear-gradient(145deg,#ffffff20,#ffffff04);box-shadow:inset 0 1px #ffffff25,0 20px 60px #0002;backdrop-filter:var(--blur);display:grid;place-items:center;margin-bottom:28px}.welcome-orb svg{width:31px;height:31px;stroke:currentColor;fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round}
+.welcome h1{font:600 clamp(32px,5vw,53px)/1.08 Manrope,sans-serif;letter-spacing:-2.4px;margin:0;max-width:650px}.welcome h1 span{color:var(--muted)}.welcome p{font-size:14px;line-height:1.7;color:var(--muted);max-width:380px;margin:16px 0 27px}
+.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;width:min(530px,100%)}.suggestion{padding:14px 15px;text-align:left;border:1px solid var(--line);border-radius:17px;background:var(--glass);backdrop-filter:var(--blur);transition:.2s}.suggestion:hover{background:var(--glass2);transform:translateY(-2px);border-color:#ffffff32}.suggestion b{font-size:12px;font-weight:700;display:block;margin-bottom:5px}.suggestion span{font-size:11px;line-height:1.5;color:var(--muted)}
+.messages{padding:28px 0 34px;display:flex;flex-direction:column;gap:30px}.message{display:flex;gap:13px;align-items:flex-start;animation:rise .25s ease both}.message.user{justify-content:flex-end}.message.user .bubble{background:var(--glass2);border:1px solid var(--line);border-radius:20px 20px 5px 20px;padding:13px 16px;max-width:min(84%,620px)}.message.assistant .bubble{min-width:0;flex:1;padding:2px 0 0}.assistant-mark{flex:0 0 30px;width:30px;height:30px;border-radius:11px;border:1px solid var(--line);background:var(--glass);display:grid;place-items:center;margin-top:1px}.assistant-mark svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.6}.text{font-size:14px;line-height:1.8;overflow-wrap:anywhere;white-space:pre-wrap}.message.assistant .text{white-space:normal}.text p{margin:0 0 13px}.text p:last-child{margin-bottom:0}.text pre{white-space:pre;overflow:auto;background:var(--input);border:1px solid var(--line);border-radius:14px;padding:15px;margin:12px 0;font:12px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace}.text code{font:12px ui-monospace,SFMono-Regular,Consolas,monospace;background:var(--glass2);padding:2px 5px;border-radius:5px}.text pre code{padding:0;background:none}.actions{display:flex;gap:5px;margin-top:12px;opacity:.78}.action{width:31px;height:30px;border:1px solid transparent;background:transparent;border-radius:9px;display:grid;place-items:center;color:var(--muted)}.action:hover,.action.active{background:var(--glass2);border-color:var(--line);color:var(--fg)}.action svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.typing{display:flex;gap:5px;padding:10px 0}.typing i{width:5px;height:5px;border-radius:50%;background:var(--muted);animation:pulse 1s infinite}.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+.composer-wrap{padding:10px 18px max(16px,env(safe-area-inset-bottom));position:relative}.composer{width:min(780px,100%);margin:0 auto;border:1px solid #ffffff20;border-radius:28px;background:color-mix(in srgb,var(--solid) 72%,transparent);backdrop-filter:blur(36px) saturate(150%);-webkit-backdrop-filter:blur(36px) saturate(150%);box-shadow:inset 0 1px #ffffff14,0 15px 50px #0002;transition:border-color .2s,box-shadow .2s}.composer:focus-within{border-color:#ffffff40;box-shadow:inset 0 1px #ffffff18,0 0 0 3px #ffffff05,0 15px 50px #0002}.attachrow{display:flex;align-items:center;gap:7px;padding:10px 12px 0}.attached{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.draft{width:100%;display:block;resize:none;max-height:180px;min-height:48px;border:0;outline:0;background:transparent;color:var(--fg);padding:11px 17px 5px;font-size:14px;line-height:1.6}.draft::placeholder{color:var(--muted)}.composer-bottom{display:flex;align-items:center;justify-content:space-between;padding:4px 10px 10px}.composer-left,.composer-right{display:flex;align-items:center;gap:7px}.mini{width:36px;height:36px;border-radius:13px;border:1px solid transparent;background:transparent;display:grid;place-items:center;color:var(--muted);transition:.2s}.mini:hover{background:var(--glass2);border-color:var(--line);color:var(--fg)}.mini svg{width:19px;height:19px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.modelpill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:7px 9px;background:var(--glass);max-width:160px}.send{width:38px;height:38px;border-radius:14px;border:1px solid #ffffff30;background:var(--fg);color:var(--bg);display:grid;place-items:center;transition:.2s}.send:disabled{opacity:.3;cursor:not-allowed}.send svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.footnote{text-align:center;color:var(--muted);font-size:10px;margin:10px 0 0;opacity:.75}
+.scrim{position:fixed;inset:0;background:#0005;backdrop-filter:blur(4px);z-index:8;opacity:0;pointer-events:none;transition:opacity .25s}.scrim.show{opacity:1;pointer-events:auto}.panel{position:fixed;z-index:9;top:12px;bottom:12px;width:min(340px,calc(100vw - 24px));border:1px solid var(--line);background:color-mix(in srgb,var(--solid) 82%,transparent);backdrop-filter:blur(40px) saturate(160%);box-shadow:var(--shadow);border-radius:25px;padding:16px;display:flex;flex-direction:column;transition:transform .28s cubic-bezier(.2,.8,.2,1)}.panel.left{left:12px;transform:translateX(calc(-100% - 24px))}.panel.right{right:12px;transform:translateX(calc(100% + 24px))}.panel.open{transform:translateX(0)}.panelhead{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 17px;border-bottom:1px solid var(--line)}.paneltitle{font:700 14px Manrope,sans-serif}.panelbody{overflow:auto;padding-top:14px}.section-label{font-size:10px;letter-spacing:1.3px;color:var(--muted);font-weight:700;padding:13px 8px 7px}.menuitem,.historyitem{width:100%;display:flex;align-items:center;gap:11px;text-align:left;border:1px solid transparent;border-radius:13px;padding:11px 10px;background:transparent;font-size:12px}.menuitem:hover,.historyitem:hover{background:var(--glass2);border-color:var(--line)}.menuitem svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;color:var(--muted)}.menuitem .sub{margin-left:auto;color:var(--muted);font-size:10px}.historyitem{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted);padding:10px}.historyitem.current{color:var(--fg);background:var(--glass2);border-color:var(--line)}.panelbottom{margin-top:auto;border-top:1px solid var(--line);padding-top:12px}.smallnote{font-size:11px;line-height:1.6;color:var(--muted);padding:8px}
+.toast{position:fixed;z-index:20;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;pointer-events:none;background:var(--fg);color:var(--bg);border-radius:12px;padding:10px 15px;font-size:12px;box-shadow:var(--shadow);transition:.2s}.toast.show{opacity:1;transform:translate(-50%,0)}
+.modalback{position:fixed;inset:0;z-index:15;display:none;place-items:center;background:#0007;backdrop-filter:blur(10px);padding:18px}.modalback.show{display:grid}.modal{width:min(420px,100%);border:1px solid var(--line);border-radius:25px;background:var(--solid);padding:24px;box-shadow:var(--shadow)}.modal h2{font:700 22px Manrope,sans-serif;letter-spacing:-.8px;margin:0 0 8px}.modal p{font-size:12px;color:var(--muted);line-height:1.7}.field{width:100%;padding:12px 13px;border:1px solid var(--line);border-radius:12px;background:var(--input);color:var(--fg);margin:7px 0;font-size:13px}.primary{border:0;background:var(--fg);color:var(--bg);border-radius:12px;padding:12px 15px;font-size:12px;font-weight:700;width:100%;margin-top:10px}
+@keyframes rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}@keyframes pulse{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+@media(max-width:600px){.topbar{height:65px;padding:0 13px}.stage{height:auto;flex:1 1 0;min-height:0}.brandnote{display:none}.conversation{padding:0 15px}.welcome{padding:25px 0}.welcome-orb{width:62px;height:62px;border-radius:22px;margin-bottom:23px}.welcome h1{letter-spacing:-1.6px}.welcome p{font-size:13px;margin:13px 0 23px}.suggestions{grid-template-columns:1fr}.suggestion{padding:12px 14px}.suggestion span{display:block}.composer-wrap{padding:7px 11px max(11px,env(safe-area-inset-bottom))}.composer{border-radius:22px}.modelpill{max-width:115px;font-size:10px}.messages{gap:24px;padding-top:20px}.text{font-size:13px}.message.user .bubble{max-width:90%}.panel{top:8px;bottom:8px}.panel.left{left:8px}.panel.right{right:8px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Premium AI reply styling */
+.text{font-size:15px;line-height:1.85;overflow-wrap:anywhere;word-break:normal}
+.text p{margin:0 0 15px}
+.text p:last-child{margin-bottom:0}
+.text h1,.text h2,.text h3{font-weight:700;line-height:1.35;letter-spacing:-.025em;margin:25px 0 11px}
+.text h1{font-size:1.45em}
+.text h2{font-size:1.25em}
+.text h3{font-size:1.08em}
+.text ul,.text ol{padding-left:25px;margin:8px 0 18px}
+.text li{padding-left:4px;margin:5px 0}
+.text li::marker{color:var(--muted)}
+.text a{color:var(--fg);text-decoration:underline;text-decoration-color:#888;text-underline-offset:3px;overflow-wrap:anywhere}
+.text a:hover{opacity:.75}
+.text strong{font-weight:700}
+.text .inline-code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.88em;background:var(--glass);border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.code-card{margin:16px 0 20px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#111;color:#f2f2f2;max-width:100%}
+.code-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 13px;background:#202020;border-bottom:1px solid #ffffff18;color:#c9c9c9;font:12px ui-monospace,monospace}
+.code-copy{border:1px solid #ffffff30;background:#303030;color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer}
+.code-copy:active{transform:scale(.97)}
+.code-card pre{margin:0;padding:16px;overflow-x:auto;white-space:pre;max-width:100%;font:13px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace;-webkit-overflow-scrolling:touch}
+.code-card pre code{font:inherit;color:inherit}
+.message.assistant .bubble{min-width:0;max-width:100%}
+.message.assistant .text{min-width:0}
+.actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:17px}
+.action{opacity:.72;transition:opacity .2s,background .2s}
+.action:hover{opacity:1;background:var(--glass)}
+@media(max-width:600px){.text{font-size:14.5px;line-height:1.8}.code-card pre{font-size:12px;padding:13px}.text h1{font-size:1.35em}.text h2{font-size:1.18em}}
+
+
+/* Fix composer shape and typing area */
+.composer{
+  position:relative;
+  overflow:hidden;
+  border-radius:24px;
+}
+.draft{
+  width:100%;
+  min-width:0;
+  max-width:100%;
+  box-sizing:border-box;
+  border:0!important;
+  outline:none!important;
+  box-shadow:none!important;
+  border-radius:0!important;
+  background:transparent!important;
+  overflow-y:auto;
+  overflow-x:hidden;
+  overflow-wrap:anywhere;
+}
+.draft:focus,.draft:focus-visible{
+  outline:none!important;
+  box-shadow:none!important;
+}
+.composer-bottom{
+  border:0;
+  background:transparent;
+}
+
 </style>
+
+<style>
+.fp-auth{max-width:360px;margin:0 auto;font-size:14px}
+.fp-auth-sub{margin:0 0 16px;color:var(--muted,#888);font-size:13px}
+.fp-auth label{display:block;margin:10px 0 5px;font-size:12px}
+.fp-auth .field{box-sizing:border-box;width:100%;min-height:40px;margin:0 0 3px}
+.fp-auth-submit{width:100%;min-height:40px;margin-top:12px}
+.fp-auth-status{font-size:12px;overflow-wrap:anywhere}
+.fp-forgot{display:block;margin:4px 0 0 auto;background:none;border:0;color:inherit;font-size:12px;text-decoration:underline}
+.fp-divider{display:flex;align-items:center;gap:10px;margin:16px 0;color:var(--muted,#888);font-size:11px}
+.fp-divider:before,.fp-divider:after{content:"";height:1px;flex:1;background:var(--border,#444)}
+.fp-oauth{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fp-oauth button{min-height:38px}
+.fp-auth-switch{text-align:center;font-size:12px;margin:16px 0 2px}
+.fp-auth-switch button{border:0;background:none;color:inherit;text-decoration:underline;font-weight:600}
+</style>
+
 </head>
 <body>
-<header>ForgePilot AI <span>Your AI coding workspace</span></header>
-<main>
-<section id="welcome">
-<h1>Build something great.</h1>
-<p>Ask questions, understand code, and plan your next build.</p>
-</section>
-<section id="chat" aria-live="polite"></section>
-</main>
-<div id="composer">
-<form id="form">
-<textarea id="message" placeholder="Ask ForgePilot anything..." required></textarea>
-<button id="send" type="submit">Send</button>
-</form>
-<div id="status">Ready</div>
-</div>
+<div class="app"><div class="ambient"></div>
+<header class="topbar">
+ <div class="topside"><button class="glassbtn" id="menuBtn" aria-label="Open menu" title="Menu"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button><div class="brand"><div class="mark"><svg viewBox="0 0 24 24"><path d="M5 17 12 4l7 13M8 13h8M7 19h10" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round"/></svg></div>ForgePilot<span class="brandnote">AI WORKSPACE</span></div></div>
+ <div class="topside"><button class="glassbtn" id="workspaceBtn" aria-label="Open workspace and history" title="Workspace / history"><svg viewBox="0 0 24 24"><path d="M8 5 3 12l5 7M16 5l5 7-5 7M14 3l-4 18"/></svg></button></div>
+</header>
+<main class="stage"><section class="conversation" id="conversation"><div class="inner" id="inner">
+ <section class="welcome" id="welcome"><div class="welcome-orb"><svg viewBox="0 0 24 24"><path d="M5 17 12 4l7 13M8 13h8M7 20h10"/></svg></div><h1>What are we<br><span>building today?</span></h1><p>A quiet space for clear thinking, sharper code, and turning complex ideas into working software.</p><div class="suggestions"><button class="suggestion" data-prompt="Help me plan a new software project from idea to first working version."><b>Plan a project</b><span>Turn an idea into a clear build plan</span></button><button class="suggestion" data-prompt="Review this code for bugs, security issues, and improvements. Ask me to attach or paste the code."><b>Review my code</b><span>Find bugs and improve quality</span></button><button class="suggestion" data-prompt="Explain this error and help me debug it step by step."><b>Fix an error</b><span>Trace a problem to its root cause</span></button><button class="suggestion" data-prompt="Help me design a polished, responsive user interface with a distinctive visual system."><b>Design an interface</b><span>Create a thoughtful UI system</span></button></div></section>
+ <div class="messages" id="messages" hidden></div>
+ </div></section>
+ <div class="composer-wrap"><form class="composer" id="chatForm"><div class="attachrow" id="attachrow" hidden><span class="attached" id="attachedName"></span><button type="button" class="mini" id="removeFile" aria-label="Remove attachment">×</button></div><textarea class="draft" id="draft" rows="1" placeholder="Message ForgePilot..." aria-label="Message ForgePilot"></textarea><div class="composer-bottom"><div class="composer-left"><button class="mini" id="attachBtn" type="button" aria-label="Attach file" title="Attach file"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><input type="file" id="fileInput" hidden><button class="mini" id="micBtn" type="button" aria-label="Voice input" title="Voice input"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg></button><span class="modelpill">Auto · Free model</span></div><div class="composer-right"><button class="send" id="sendBtn" type="submit" aria-label="Send message" disabled><svg viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div></div></form><div class="footnote">AI can make mistakes. Review important code and commands before running.</div></div>
+</main></div>
+<div class="scrim" id="scrim"></div>
+<aside class="panel left" id="menuPanel" aria-label="Main menu"><div class="panelhead"><span class="paneltitle">ForgePilot menu</span><button class="glassbtn closePanel" aria-label="Close menu"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="panelbody">
+<button class="menuitem" id="newChat"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New chat</button>
+<button class="menuitem" id="searchChats"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>Search conversations</button>
+<div class="section-label">PREFERENCES</div>
+<button class="menuitem" id="themeBtn"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 9 9c0-1-.8-1.5-1.7-1.1A6.5 6.5 0 0 1 13 4.6C13 3.7 12.9 3 12 3Z"/></svg>Appearance <span class="sub" id="themeLabel">Dark</span></button>
+<button class="menuitem" id="planBtn"><svg viewBox="0 0 24 24"><path d="M4 7h16v13H4zM8 7V4h8v3M8 12h8M8 16h5"/></svg>Plans & usage <span class="sub">Preview</span></button>
+<button class="menuitem" id="accountBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account & sign in</button>
+<button class="menuitem" id="connectorsBtn"><svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="m9 11 6-4M9 13l6 4"/></svg>Connectors <span class="sub">Explore</span></button>
+<button class="menuitem" id="settingsBtn"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19 13.5 2 1.5-2 3-2.4-1a8 8 0 0 1-2 1.1L14 21h-4l-.6-2.9a8 8 0 0 1-2-1.1L5 18l-2-3 2-1.5a8 8 0 0 1 0-2L3 10l2-3 2.4 1a8 8 0 0 1 2-1.1L10 4h4l.6 2.9a8 8 0 0 1 2 1.1L19 7l2 3-2 1.5a8 8 0 0 1 0 2Z" transform="translate(0 -1) scale(1 .95)"/></svg>Settings</button>
+</div><div class="panelbottom"><div class="smallnote">Local preview · Conversation history is saved on this device only.</div></div></aside>
+<aside class="panel right" id="workspacePanel" aria-label="Workspace and history"><div class="panelhead"><span class="paneltitle">Workspace</span><button class="glassbtn closePanel" aria-label="Close workspace"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div class="panelbody"><button class="menuitem" id="workspaceNew"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Start a fresh conversation</button><div class="section-label">RECENT CHATS</div><div id="historyList"></div><div class="smallnote" id="historyEmpty">Your saved conversations will appear here.</div><div class="section-label">BUILD TOOLS</div><button class="menuitem" data-toast="Project file tools need a connected project workspace."><svg viewBox="0 0 24 24"><path d="M3 7h7l2 2h9v10H3zM3 7V5h7l2 2"/></svg>Project files <span class="sub">Setup needed</span></button><button class="menuitem" data-toast="Diff approval is planned for a later agent integration."><svg viewBox="0 0 24 24"><path d="M7 4v16M17 4v16M3 8h8M13 16h8"/></svg>Review changes <span class="sub">Preview</span></button><button class="menuitem" data-toast="Test runner is not connected yet."><svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>Run tests <span class="sub">Setup needed</span></button></div></aside>
+<div class="modalback" id="modalback"><div class="modal"><div style="display:flex;justify-content:space-between;align-items:center"><h2 id="modalTitle">Account</h2><button class="glassbtn" id="modalClose" aria-label="Close dialog"><svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><div id="modalContent"></div></div></div>
+<div class="toast" id="toast" role="status"></div>
 <script>
-const form = document.querySelector("#form");
-const input = document.querySelector("#message");
-const chat = document.querySelector("#chat");
-const send = document.querySelector("#send");
-const status = document.querySelector("#status");
-document.querySelector("#welcome");
-function addMessage(text, role) {
-  const el = document.createElement("div");
-  el.className = "msg " + role;
-  el.textContent = text;
-  chat.appendChild(el);
-  el.scrollIntoView({behavior:"smooth",block:"end"});
-  return el;
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const draft=$('#draft'), messagesEl=$('#messages'), welcome=$('#welcome'), conversation=$('#conversation');
+let chats=JSON.parse(localStorage.getItem('fp_chats_v2')||'[]'), currentId=null, currentMessages=[], selectedFile=null, toastTimer;
+const icons={copy:'<svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',like:'<svg viewBox="0 0 24 24"><path d="M7 10v10H4V10zM7 20h10a2 2 0 0 0 2-1.6l1-6A2 2 0 0 0 18 10h-5l1-4a2 2 0 0 0-2-2l-5 6"/></svg>',dislike:'<svg viewBox="0 0 24 24"><path d="M7 14V4H4v10zM7 4h10a2 2 0 0 1 2 1.6l1 6A2 2 0 0 1 18 14h-5l1 4a2 2 0 0 1-2 2l-5-6"/></svg>',retry:'<svg viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.5 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.5-3"/></svg>'};
+function toast(s){let t=$('#toast');t.textContent=s;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2400)}
+function save(){localStorage.setItem('fp_chats_v2',JSON.stringify(chats))}
+function openPanel(which){closePanels();$('#scrim').classList.add('show');$('#'+which).classList.add('open')}
+function closePanels(){$$('.panel').forEach(p=>p.classList.remove('open'));$('#scrim').classList.remove('show')}
+$('#menuBtn').onclick=()=>openPanel('menuPanel');$('#workspaceBtn').onclick=()=>{renderHistory();openPanel('workspacePanel')};$('#scrim').onclick=closePanels;$$('.closePanel').forEach(b=>b.onclick=closePanels);
+function fresh(){currentId=null;currentMessages=[];selectedFile=null;$('#attachrow').hidden=true;draft.value='';messagesEl.innerHTML='';messagesEl.hidden=true;welcome.hidden=false;updateSend();closePanels();renderHistory();draft.focus()}
+$('#newChat').onclick=fresh;$('#workspaceNew').onclick=fresh;
+function renderHistory(){let host=$('#historyList');host.innerHTML='';$('#historyEmpty').hidden=chats.length>0;chats.slice().reverse().forEach(c=>{let b=document.createElement('button');b.className='historyitem'+(c.id===currentId?' current':'');b.textContent=c.title||'New conversation';b.onclick=()=>loadChat(c.id);host.append(b)})}
+function loadChat(id){let c=chats.find(x=>x.id===id);if(!c)return;currentId=c.id;currentMessages=c.messages||[];messagesEl.innerHTML='';welcome.hidden=true;messagesEl.hidden=false;currentMessages.forEach(m=>renderMessage(m.role,m.content,false));renderHistory();closePanels();scrollBottom()}
+function persist(){if(!currentMessages.length)return;let title=(currentMessages.find(m=>m.role==='user')?.content||'New conversation').replace(/\s+/g,' ').slice(0,48);let i=chats.findIndex(c=>c.id===currentId);let obj={id:currentId,title,messages:currentMessages,updated:Date.now()};if(i>=0)chats[i]=obj;else chats.push(obj);chats=chats.slice(-80);save();renderHistory()}
+function escapeHtml(s){return s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function formatText(s){
+ let safe=escapeHtml(String(s));
+ const blocks=[];
+ safe=safe.replace(/```([\w.+#-]*)\n?([\s\S]*?)```/g,(_,lang,code)=>{
+   const id=blocks.length;
+   blocks.push('<div class="code-card"><div class="code-head"><span>'+escapeHtml(lang||'code')+'</span><button class="code-copy" type="button" data-copy-code="'+id+'">Copy code</button></div><pre><code>'+code.trim()+'</code></pre></div>');
+   return '\n@@CODE'+id+'@@\n';
+ });
+ safe=safe.replace(/`([^`\n]+)`/g,'<code class="inline-code">$1</code>');
+ safe=safe.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+   (_,label,url)=>'<a href="'+url+'" target="_blank" rel="noopener noreferrer">'+label+'</a>');
+ safe=safe.replace(/(^|\s)(https?:\/\/[^\s<]+)/g,
+   (all,space,url)=>space+'<a href="'+url+'" target="_blank" rel="noopener noreferrer">'+url+'</a>');
+ const lines=safe.split('\n');
+ let out='', list='';
+ const closeList=()=>{if(list){out+='</'+list+'>';list='';}};
+ for(const line of lines){
+   const codeMatch=line.match(/^@@CODE(\d+)@@$/);
+   if(codeMatch){closeList();out+=blocks[Number(codeMatch[1])];continue;}
+   const h=line.match(/^(#{1,3})\s+(.+)$/);
+   const ul=line.match(/^\s*[-*]\s+(.+)$/);
+   const ol=line.match(/^\s*\d+[.)]\s+(.+)$/);
+   if(h){closeList();const n=h[1].length;out+='<h'+n+'>'+h[2]+'</h'+n+'>';continue;}
+   if(ul||ol){
+     const kind=ul?'ul':'ol';
+     if(list!==kind){closeList();list=kind;out+='<'+list+'>';}
+     out+='<li>'+(ul?ul[1]:ol[1])+'</li>';continue;
+   }
+   closeList();
+   if(!line.trim())continue;
+   out+='<p>'+line+'</p>';
+ }
+ closeList();
+ out=out.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+ out=out.replace(/(^|[^\*])\*([^*\n]+)\*/g,'$1<em>$2</em>');
+ return out;
 }
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const message = input.value.trim();
-  if (!message || send.disabled) return;
-  document.querySelector("#welcome").style.display = "none";
-  addMessage(message, "user");
-  input.value = "";
-  send.disabled = true;
-  status.textContent = "ForgePilot is thinking...";
-  const reply = addMessage("Working...", "ai");
-  try {
-    const response = await fetch("/api/chat", {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message})
+function renderMessage(role,content,saveIt=true){const m=document.createElement('article');m.className='message '+role;if(role==='assistant'){const mark=document.createElement('div');mark.className='assistant-mark';mark.innerHTML='<svg viewBox="0 0 24 24"><path d="M5 17 12 4l7 13M8 13h8M7 20h10"/></svg>';m.append(mark)}
+const b=document.createElement('div');b.className='bubble';const tx=document.createElement('div');tx.className='text';tx.innerHTML=role==='assistant'?formatText(content):escapeHtml(content).replace(/\n/g,'<br>');b.append(tx);
+if(role==='assistant'){const a=document.createElement('div');a.className='actions';[['copy','Copy'],['like','Helpful'],['dislike','Not helpful'],['retry','Regenerate']].forEach(([k,label])=>{let bt=document.createElement('button');bt.className='action';bt.title=label;bt.setAttribute('aria-label',label);bt.innerHTML=icons[k];bt.onclick=()=>{if(k==='copy'){navigator.clipboard?.writeText(content).then(()=>toast('Response copied')).catch(()=>toast('Copy is not available in this browser'))}else if(k==='retry'){retryLast()}else{bt.classList.toggle('active');toast(k==='like'?'Feedback noted':'Feedback noted')}};a.append(bt)});b.append(a)}
+m.append(b);messagesEl.append(m);if(saveIt){currentMessages.push({role,content});persist()}return m}
+
+document.addEventListener('click',async e=>{
+ const b=e.target.closest('[data-copy-code]');
+ if(!b)return;
+ const card=b.closest('.code-card');
+ const code=card?.querySelector('pre code')?.textContent||'';
+ try{
+   if(navigator.clipboard&&window.isSecureContext)await navigator.clipboard.writeText(code);
+   else{
+     const area=document.createElement('textarea');
+     area.value=code;area.style.position='fixed';area.style.opacity='0';
+     document.body.append(area);area.select();
+     const ok=document.execCommand('copy');area.remove();
+     if(!ok)throw new Error('copy failed');
+   }
+   b.textContent='Copied';
+   setTimeout(()=>b.textContent='Copy code',1400);
+ }catch{toast('Code copy is not available in this browser');}
+});
+
+function scrollBottom(){requestAnimationFrame(()=>{conversation.scrollTop=conversation.scrollHeight;requestAnimationFrame(()=>{conversation.scrollTop=conversation.scrollHeight})})}
+function updateSend(){
+ const hasText=!!draft.value.trim(), hasFile=!!selectedFile;
+ $('#sendBtn').disabled=!hasText&&!hasFile;
+ $('#micBtn').hidden=hasText||hasFile;
+ $('#sendBtn').hidden=!hasText&&!hasFile;
+}
+draft.addEventListener('input',()=>{
+ draft.style.height='auto';
+ draft.style.height=Math.min(draft.scrollHeight,180)+'px';
+ updateSend();
+}); 
+draft.addEventListener('keydown',e=>{
+ if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){
+  e.preventDefault();
+  if(!$('#sendBtn').disabled)$('#chatForm').requestSubmit();
+ }
+});
+$$('.suggestion').forEach(b=>b.onclick=()=>{draft.value=b.dataset.prompt;updateSend();draft.focus()});
+$('#attachBtn').onclick=()=>$('#fileInput').click();
+$('#fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>500000){toast('Please attach a file under 500 KB');return}selectedFile=f;$('#attachedName').textContent=f.name;$('#attachrow').hidden=false;updateSend();if(/\.(png|jpe?g|webp|gif|pdf|zip)$/i.test(f.name))toast('File selected; text files work best in this preview');else toast('File attached')};
+$('#removeFile').onclick=()=>{selectedFile=null;$('#fileInput').value='';$('#attachrow').hidden=true;updateSend()};
+$('#micBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('Voice input is not supported by this browser');return}const r=new SR();r.lang='en-US';r.onresult=e=>{draft.value+=(draft.value?' ':'')+e.results[0][0].transcript;updateSend()};r.onerror=()=>toast('Could not capture voice');r.start()};
+$('#chatForm').onsubmit=async e=>{e.preventDefault();let text=draft.value.trim();if(!text&&!selectedFile)return;let fileText='';if(selectedFile&&selectedFile.size<500000&&!/\.(png|jpe?g|webp|gif|pdf|zip)$/i.test(selectedFile.name)){try{fileText=await selectedFile.text()}catch{}}if(selectedFile)text=(text?text+'\n\n':'')+'[Attached file: '+selectedFile.name+']'+(fileText?'\n\nFile contents:\n'+fileText:'');if(!text)return;
+if(!currentId)currentId=String(Date.now());welcome.hidden=true;messagesEl.hidden=false;renderMessage('user',text);draft.value='';draft.style.height='auto';selectedFile=null;$('#fileInput').value='';$('#attachrow').hidden=true;updateSend();closePanels();
+const wait=document.createElement('article');wait.className='message assistant';wait.innerHTML='<div class="assistant-mark"><svg viewBox="0 0 24 24"><path d="M5 17 12 4l7 13M8 13h8M7 20h10"/></svg></div><div class="bubble"><div class="typing"><i></i><i></i><i></i></div></div>';messagesEl.append(wait);scrollBottom();
+try{const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json',...(fpSession?.access_token?{'Authorization':'Bearer '+fpSession.access_token}:{})},body:JSON.stringify({message:text,messages:currentMessages.map(m=>({role:m.role,content:m.content})),model:'openrouter/free'})});let data={};try{data=await resp.json()}catch{}wait.remove();if(!resp.ok)throw new Error(data.error||'Request failed ('+resp.status+')');renderMessage('assistant',data.reply);persist()}catch(err){wait.remove();renderMessage('assistant','I could not get a response: '+(err.message||'Unknown error')+'\n\nCheck that the local server is running and /api/health is online.');persist()}scrollBottom()};
+async function retryLast(){let idx=currentMessages.length-1;if(idx<0)return;while(idx>=0&&currentMessages[idx].role!=='assistant')idx--;if(idx<0){toast('No assistant reply to regenerate');return}currentMessages=currentMessages.slice(0,idx);messagesEl.innerHTML='';currentMessages.forEach(m=>renderMessage(m.role,m.content,false));persist();let last=currentMessages.filter(m=>m.role==='user').at(-1);if(last){draft.value=last.content;$('#chatForm').requestSubmit()}}
+$('#themeBtn').onclick=()=>{let n=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=n;localStorage.setItem('fp_theme',n);$('#themeLabel').textContent=n==='dark'?'Dark':'Light';toast(n==='dark'?'Dark theme enabled':'Light theme enabled')};
+let savedTheme=localStorage.getItem('fp_theme');if(savedTheme){document.documentElement.dataset.theme=savedTheme;$('#themeLabel').textContent=savedTheme==='dark'?'Dark':'Light'}
+function modal(title,html){$('#modalTitle').textContent=title;$('#modalContent').innerHTML=html;$('#modalback').classList.add('show')}
+$('#modalClose').onclick=()=>$('#modalback').classList.remove('show');$('#modalback').onclick=e=>{if(e.target.id==='modalback')$('#modalback').classList.remove('show')};
+let fpAuthMode = "login";
+let fpAuthConfig = null;
+let fpSession = null;
+try { fpSession = JSON.parse(localStorage.getItem("fp_auth_session") || "null"); } catch {}
+fetch("/api/config").then(r=>r.json()).then(c=>fpAuthConfig=c).catch(()=>{});
+
+function showAuth(mode="login") {
+  fpAuthMode = mode;
+  const signup = mode === "signup";
+  modal(signup ? "Create account" : "Welcome back", `
+    <div class="fp-auth">
+      <p class="fp-auth-sub">${signup ? "Create your free account" : "Log in to continue"}</p>
+      ${signup ? `<label for="fpName">Name</label><input class="field" id="fpName" autocomplete="name" placeholder="Your name">` : ""}
+      <label for="fpEmail">Email</label>
+      <input class="field" id="fpEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
+      <label for="fpPassword">Password</label>
+      <input class="field" id="fpPassword" type="password" autocomplete="${signup ? "new-password" : "current-password"}" placeholder="${signup ? "At least 6 characters" : "Your password"}" required>
+      ${signup ? `<label for="fpConfirm">Confirm password</label><input class="field" id="fpConfirm" type="password" autocomplete="new-password" placeholder="Enter password again" required>` : `<button type="button" class="fp-forgot" id="fpForgot">Forgot password?</button>`}
+      <p class="fp-auth-status" id="fpAuthStatus" role="status"></p>
+      <button class="primary fp-auth-submit" id="fpAuthSubmit">${signup ? "Create account" : "Log in"}</button>
+      <div class="fp-divider"><span>or continue with</span></div>
+      <div class="fp-oauth">
+        <button type="button" class="glassbtn" id="fpGoogle">Google</button>
+        <button type="button" class="glassbtn" id="fpGithub">GitHub</button>
+      </div>
+      <p class="fp-auth-switch">${signup ? "Already have an account?" : "Don't have an account?"} <button type="button" id="fpAuthSwitch">${signup ? "Log in" : "Sign up"}</button></p>
+    </div>
+  `);
+  const status = $("#fpAuthStatus");
+  const base = fpAuthConfig?.supabaseUrl?.replace(/\/+$/, "");
+  const key = fpAuthConfig?.supabasePublishableKey;
+  $("#fpAuthSwitch").onclick = () => showAuth(signup ? "login" : "signup");
+
+  async function authRequest(path, body) {
+    if (!base || !key) throw new Error("Supabase config missing. Check server settings.");
+    const r = await fetch(base + path, {
+      method: "POST",
+      headers: {"Content-Type":"application/json", "apikey":key},
+      body: JSON.stringify(body)
     });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || "Request failed");
-    reply.textContent = data.reply;
-    status.textContent = "Ready";
-  } catch (error) {
-    reply.textContent = "Error: " + error.message;
-    status.textContent = "Request failed";
-  } finally {
-    send.disabled = false;
-    input.focus();
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.msg || d.message || d.error_description || d.error || "Request failed");
+    return d;
   }
-});
-input.addEventListener("keydown", event => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
-    form.requestSubmit();
+
+  $("#fpAuthSubmit").onclick = async () => {
+    const email = $("#fpEmail").value.trim();
+    const password = $("#fpPassword").value;
+    if (!email || password.length < 6) {
+      status.textContent = "Enter your email and a password with at least 6 characters.";
+      return;
+    }
+    if (signup && password !== $("#fpConfirm").value) {
+      status.textContent = "Passwords do not match.";
+      return;
+    }
+    status.textContent = "Please wait...";
+    try {
+      const data = await authRequest(
+        signup ? "/auth/v1/signup" : "/auth/v1/token?grant_type=password",
+        signup
+          ? {email, password, data:{full_name:$("#fpName").value.trim()}}
+          : {email, password}
+      );
+      if (signup && !data.access_token) {
+        status.textContent = "Account created. Check your email to confirm, then log in.";
+        return;
+      }
+      if (!data.access_token) throw new Error("No session returned. Check email confirmation settings.");
+      fpSession = data;
+      localStorage.setItem("fp_auth_session", JSON.stringify(data));
+      modal("You're signed in", "<p>Account connected successfully.</p><button class='primary' id='fpAuthDone'>Continue</button>");
+      $("#fpAuthDone").onclick = () => $("#modalback").classList.remove("show");
+    } catch (err) {
+      status.textContent = err.message || "Authentication failed.";
+    }
+  };
+
+  $("#fpGoogle").onclick = () => {
+    if (!base || !key) { status.textContent = "Supabase config missing."; return; }
+    const redirect = location.origin + location.pathname;
+    location.href = base + "/auth/v1/authorize?provider=google&redirect_to=" + encodeURIComponent(redirect) + "&apikey=" + encodeURIComponent(key);
+  };
+  $("#fpGithub").onclick = () => {
+    if (!base || !key) { status.textContent = "Supabase config missing."; return; }
+    const redirect = location.origin + location.pathname;
+    location.href = base + "/auth/v1/authorize?provider=github&redirect_to=" + encodeURIComponent(redirect) + "&apikey=" + encodeURIComponent(key);
+  };
+  if (!signup) {
+    $("#fpForgot").onclick = async () => {
+      const email = $("#fpEmail").value.trim();
+      if (!email) { status.textContent = "Enter your email first."; return; }
+      try {
+        await authRequest("/auth/v1/recover", {email, redirect_to:location.origin + location.pathname});
+        status.textContent = "If the account exists, a password reset email will be sent.";
+      } catch (err) { status.textContent = err.message; }
+    };
   }
+}
+$('#accountBtn').onclick=()=>{closePanels();showAuth("login")};
+$('#planBtn').onclick=()=>{closePanels();modal('Plans & usage','<p>This is a local preview. Usage limits, subscriptions and billing are not connected yet. No plan or payment will be charged from this screen.</p>')};
+$('#settingsBtn').onclick=()=>{closePanels();modal('Settings','<p><b>Appearance</b><br>Switch between light and dark liquid-glass themes from the menu.</p><p><b>Privacy</b><br>Chat history is saved in this browser’s local storage. Clear site data to remove it from this device.</p><p><b>AI provider</b><br>Replies use the model configured by your local server.</p>')};
+$('#searchChats').onclick=()=>{closePanels();modal('Search conversations','<input class="field" id="searchInput" placeholder="Search saved chats..."><div id="searchResults"></div>');$('#searchInput').oninput=e=>{let q=e.target.value.toLowerCase();let hits=chats.filter(c=>(c.title||'').toLowerCase().includes(q));$('#searchResults').innerHTML='';hits.forEach(c=>{let b=document.createElement('button');b.className='historyitem';b.textContent=c.title;b.onclick=()=>{$('#modalback').classList.remove('show');loadChat(c.id)};$('#searchResults').append(b)})}};
+$$('[data-toast]').forEach(b=>b.onclick=()=>{closePanels();toast(b.dataset.toast)});
+$('#draft').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('#chatForm').requestSubmit()}});
+renderHistory();updateSend();
+
+function openConnectorsMarketplace(){
+  const items = [
+    ["github","GitHub","Developer","github","Code repositories, source control, issues aur pull requests."],
+    ["gitlab","GitLab","Developer","gitlab","Git repositories, code reviews aur CI/CD pipelines."],
+    ["bitbucket","Bitbucket","Developer","bitbucket","Git repositories aur team code collaboration."],
+    ["supabase","Supabase","Developer","supabase","Database, authentication, storage aur backend services."],
+    ["cloudflare","Cloudflare","Developer","cloudflare","DNS, website security, Workers aur edge applications."],
+    ["render","Render","Developer","render","Web apps aur APIs ko deploy aur host karna."],
+    ["vercel","Vercel","Developer","vercel","Websites aur frontend projects deploy karna."],
+    ["netlify","Netlify","Developer","netlify","Web hosting, deploy previews aur website workflows."],
+    ["google-drive","Google Drive","Productivity","googledrive","Cloud files ko store, search aur organize karna."],
+    ["gmail","Gmail","Productivity","gmail","Email workflows aur messages ke saath kaam karna."],
+    ["google-calendar","Google Calendar","Productivity","googlecalendar","Events, meetings aur calendar schedules manage karna."],
+    ["google-docs","Google Docs","Productivity","googledocs","Documents create, read aur organize karna."],
+    ["microsoft-onedrive","Microsoft OneDrive","Productivity","onedrive","Cloud files aur documents manage karna."],
+    ["outlook","Outlook","Productivity","microsoftoutlook","Email aur calendar workflows."],
+    ["microsoft-teams","Microsoft Teams","Communication","microsoftteams","Team communication, chats aur collaboration."],
+    ["slack","Slack","Communication","slack","Team messages, channels aur notifications."],
+    ["discord","Discord","Communication","discord","Community servers aur messaging workflows."],
+    ["telegram","Telegram","Communication","telegram","Chats aur bot-based messaging workflows."],
+    ["notion","Notion","Productivity","notion","Notes, documents, wikis aur project databases."],
+    ["figma","Figma","Design","figma","UI designs, prototypes aur design collaboration."],
+    ["canva","Canva","Design","canva","Graphics, presentations aur visual content banana."],
+    ["dropbox","Dropbox","Storage","dropbox","Cloud files ko store aur share karna."],
+    ["airtable","Airtable","Data","airtable","Tables, records aur lightweight databases manage karna."],
+    ["zapier","Zapier","Automation","zapier","Apps ke beech automated workflows banana."],
+    ["make","Make","Automation","make","Visual automation aur multi-step workflows."],
+    ["n8n","n8n","Automation","n8n","Custom workflows aur app integrations automate karna."],
+    ["custom-mcp","Custom MCP Server","Developer","","Apne MCP-compatible tools aur services configure karna."]
+  ];
+
+  const categories = ["All","Developer","Productivity","Communication","Design","Storage","Data","Automation"];
+  modal("Connectors", `
+    <p style="color:var(--muted);font-size:12px;line-height:1.6">
+      Connect tools to ForgePilot. Choose a service to open its connection options. A service becomes connected only after authorization succeeds.
+    </p>
+    <input id="connectorSearch" placeholder="Search connectors..." aria-label="Search connectors"
+      style="box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--glass2);color:var(--fg);margin:10px 0">
+    <div id="connectorCategories" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px"></div>
+    <div id="connectorList" style="display:grid;gap:9px;max-height:52vh;overflow:auto"></div>
+    <p style="color:var(--muted);font-size:10px;margin-top:12px">A listed service is not necessarily connected. Only verified connections will show as connected.</p>
+  `);
+
+  let selected = "All";
+  const list = document.getElementById("connectorList");
+  const search = document.getElementById("connectorSearch");
+  const cats = document.getElementById("connectorCategories");
+  if(!list || !search || !cats) return;
+
+  function renderCategories(){
+    cats.innerHTML = categories.map(c =>
+      `<button type="button" data-category="${c}" style="border:1px solid var(--line);border-radius:20px;padding:7px 10px;background:${selected===c?'var(--glass2)':'transparent'};color:var(--fg);font-size:11px">${c}</button>`
+    ).join("");
+    cats.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+      selected=b.dataset.category;
+      renderCategories();
+      renderList();
+    });
+  }
+
+  function renderList(){
+    const q=search.value.trim().toLowerCase();
+    const filtered=items.filter(x=>
+      (selected==="All" || x[2]===selected) &&
+      (x[1].toLowerCase().includes(q) || x[2].toLowerCase().includes(q))
+    );
+    list.innerHTML = filtered.length ? filtered.map(x=>`
+      <div style="display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:13px;padding:11px">
+        <div style="width:40px;height:40px;flex-shrink:0;display:grid;place-items:center;border:1px solid var(--line);border-radius:11px;background:#fff;padding:7px;box-sizing:border-box"><img src="${x[3] ? `https://cdn.simpleicons.org/${x[3]}` : ''}" alt="${x[1]} logo" loading="lazy" style="width:100%;height:100%;object-fit:contain" onerror="this.style.display='none';this.parentElement.textContent='◇';this.parentElement.style.color='#111'"></div>
+        <div style="min-width:0;flex:1">
+          <div style="font-size:12px;font-weight:700">${x[1]}</div>
+          <div style="font-size:10px;color:var(--muted);margin-top:4px">${x[2]}</div><div style="font-size:11px;line-height:1.5;margin-top:5px;color:var(--muted)">${x[4]}</div><div style="font-size:10px;margin-top:5px;color:var(--muted)">Not connected</div>
+        </div>
+        <button type="button" data-connect="${x[0]}" style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--glass2);color:var(--fg);font-size:11px">Connect</button>
+      </div>
+    `).join("") : '<p style="font-size:12px;color:var(--muted)">No connectors found.</p>';
+
+    list.querySelectorAll("[data-connect]").forEach(b=>b.onclick=async()=>{
+      const id=b.dataset.connect;
+      if(id==="github"){
+        try{
+          const r=await fetch("/api/connectors/github/status");
+          if(!r.ok) throw new Error();
+          const status=await r.json();
+          if(status.connected){
+            toast("GitHub is already connected.");
+            return;
+          }
+          window.location.href="/api/connectors/github/connect";
+        }catch(e){
+          toast("GitHub connection endpoint unavailable. Check that the server is running.");
+        }
+      }else if(id==="supabase"){
+        let status = {};
+        try {
+          const r = await fetch("/api/connectors/supabase/status");
+          if (r.ok) status = await r.json();
+        } catch {}
+
+        modal("Connect Supabase", `
+          <p style="font-size:13px;line-height:1.6">Connect a Supabase project to ForgePilot AI.</p>
+          <label style="display:block;font-size:12px;margin:12px 0 5px">Project URL</label>
+          <input id="sbProjectUrl" type="url" placeholder="https://your-project.supabase.co"
+            style="box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--glass2);color:var(--fg)">
+          <label style="display:block;font-size:12px;margin:12px 0 5px">Publishable / anon key</label>
+          <input id="sbApiKey" type="password" autocomplete="off" placeholder="Paste publishable or anon key"
+            style="box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--glass2);color:var(--fg)">
+          <p style="font-size:11px;color:var(--muted);line-height:1.6">Do not use a service_role or sb_secret key. The connection is verified by the backend before being saved.</p>
+          <p id="sbStatus" style="font-size:12px;line-height:1.6">${status.connected ? "Currently connected: " + status.projectUrl : "Not connected"}</p>
+          <button type="button" class="primary" id="sbConnect" style="margin-top:8px">Verify and connect</button>
+          <button type="button" id="sbDisconnect" style="margin:8px 0 0 8px;border:1px solid var(--line);border-radius:10px;padding:10px;background:transparent;color:var(--fg)">Disconnect</button>
+          <button type="button" id="connectorBack" style="display:block;margin-top:12px;border:1px solid var(--line);border-radius:10px;padding:10px;background:transparent;color:var(--fg)">Back to connectors</button>
+        `);
+
+        document.getElementById("connectorBack")?.addEventListener("click", openConnectorsMarketplace);
+
+        document.getElementById("sbConnect")?.addEventListener("click", async () => {
+          const projectUrl = document.getElementById("sbProjectUrl").value.trim();
+          const apiKey = document.getElementById("sbApiKey").value.trim();
+          const btn = document.getElementById("sbConnect");
+          const note = document.getElementById("sbStatus");
+          if (!projectUrl || !apiKey) {
+            toast("Enter both the project URL and publishable/anon key.");
+            return;
+          }
+          btn.disabled = true;
+          btn.textContent = "Verifying...";
+          try {
+            const r = await fetch("/api/connectors/supabase/connect", {
+              method: "POST",
+              headers: {"Content-Type":"application/json"},
+              body: JSON.stringify({projectUrl, apiKey})
+            });
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok || !data.success) throw new Error(data.error || "Connection failed.");
+            note.textContent = "Connected: " + data.projectUrl;
+            document.getElementById("sbApiKey").value = "";
+            toast("Supabase connection verified.");
+          } catch (e) {
+            note.textContent = e.message || "Connection failed.";
+            toast(note.textContent);
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "Verify and connect";
+          }
+        });
+
+        document.getElementById("sbDisconnect")?.addEventListener("click", async () => {
+          try {
+            const r = await fetch("/api/connectors/supabase/disconnect", {method:"POST"});
+            const data = await r.json().catch(() => ({}));
+            if (!r.ok || !data.success) throw new Error(data.error || "Disconnect failed.");
+            document.getElementById("sbStatus").textContent = "Not connected";
+            document.getElementById("sbApiKey").value = "";
+            toast("Supabase disconnected.");
+          } catch (e) {
+            toast(e.message || "Disconnect failed.");
+          }
+        });
+      }else{
+        const item = items.find(x => x[0] === id);
+        const oauthProviders = ["google-drive","gmail","google-calendar","google-docs","microsoft-onedrive","outlook","microsoft-teams","slack","notion","figma","dropbox"];
+        const apiProviders = ["supabase","cloudflare","render","vercel","netlify","airtable","gitlab","bitbucket"];
+        let kind = id === "custom-mcp" ? "MCP server" :
+                   oauthProviders.includes(id) ? "OAuth authorization" :
+                   apiProviders.includes(id) ? "API credentials" : "Connector configuration";
+        modal("Connect " + (item?.[1] || id), `
+          <p style="font-size:13px;line-height:1.7">Choose how to connect ${item?.[1] || id} to ForgePilot AI.</p>
+          <p style="font-size:12px;color:var(--muted);line-height:1.7">Connection method: ${kind}. This connector is not connected yet; finish authorization or configuration before using it.</p>
+          ${id === "custom-mcp" ? `
+            <label style="display:block;font-size:12px;margin:12px 0 5px">MCP server URL</label>
+            <input id="mcpServerUrl" placeholder="https://your-mcp-server.example" style="box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--glass2);color:var(--fg)">
+            <button class="primary" id="saveMcpUrl" style="margin-top:10px">Continue</button>
+            <p id="mcpNote" style="font-size:11px;color:var(--muted);line-height:1.6">This saves no credentials and does not claim the server is connected. Secure server-side MCP authorization still needs implementation.</p>
+          ` : `
+            <button class="primary" id="connectorContinue" style="margin-top:10px">Connection options</button>
+            <p style="font-size:11px;color:var(--muted);line-height:1.6">The provider-specific authorization endpoint has not been implemented yet. This button will not pretend to connect your account.</p>
+          `}
+          <button type="button" id="connectorBack" style="margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px;background:transparent;color:var(--fg)">Back to connectors</button>
+        `);
+        document.getElementById("connectorBack")?.addEventListener("click", openConnectorsMarketplace);
+        document.getElementById("connectorContinue")?.addEventListener("click", () => {
+          toast("Provider authorization is not implemented yet.");
+        });
+        document.getElementById("saveMcpUrl")?.addEventListener("click", () => {
+          const input = document.getElementById("mcpServerUrl");
+          let url;
+          try { url = new URL(input.value.trim()); } catch {}
+          if (!url || !["https:", "http:"].includes(url.protocol) || url.username || url.password) {
+            toast("Enter a valid HTTP or HTTPS MCP server URL.");
+            return;
+          }
+          toast("URL checked for format only; server is not connected yet.");
+        });
+      }
+    });
+  }
+
+  search.addEventListener("input",renderList);
+  renderCategories();
+  renderList();
+}
+
+document.getElementById("connectorsBtn")?.addEventListener("click",()=>{
+  closePanels();
+  openConnectorsMarketplace();
 });
+
 </script>
-</body>
-</html>
+</body></html>
