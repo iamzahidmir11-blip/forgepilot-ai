@@ -86,10 +86,34 @@ html[data-theme=light]{color-scheme:light;--bg:#efeff1;--fg:#171719;--muted:#777
   background:transparent;
 }
 
+
+/* Full-screen premium authentication */
+body.fp-logged-out .app{display:none}
+body.fp-logged-out .modalback{display:grid;position:fixed;inset:0;z-index:100;padding:20px;background:#050505;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.fp-logged-out .modal{width:min(460px,100%);max-height:94dvh;overflow:auto;background:#101010;color:#fff;border:1px solid #303030;border-radius:28px;padding:30px;box-shadow:none}
+body.fp-logged-out #modalClose{display:none}
+body.fp-logged-out .modal h2{font-size:28px;letter-spacing:-1px;margin:0 0 8px}
+body.fp-logged-out .modalback> .modal>div:first-child{margin-bottom:18px}
+body.fp-logged-out .fp-auth{max-width:none}
+body.fp-logged-out .fp-welcome-heading{font-size:30px;line-height:1.15;letter-spacing:-1px;margin:0 0 10px;color:#fff}
+body.fp-logged-out .modal h2{display:none}
+body.fp-logged-out .fp-auth-sub{font-size:14px;color:#aaa;margin-bottom:24px}
+body.fp-logged-out .fp-auth label{font-size:12px;color:#ddd}
+body.fp-logged-out .fp-auth .field{min-height:48px;background:#080808;border:1px solid #383838;border-radius:12px;color:#fff;padding:13px}
+body.fp-logged-out .fp-oauth{grid-template-columns:1fr;gap:10px}
+body.fp-logged-out .fp-oauth button{min-height:54px;border:1px solid #444;background:#fff;color:#111;border-radius:12px;font-size:15px}
+body.fp-logged-out .fp-oauth button:hover{background:#eaeaea}
+body.fp-logged-out .fp-oauth svg{width:24px;height:24px}
+body.fp-logged-out .fp-auth-submit{min-height:48px;border-radius:12px;font-size:14px}
+body.fp-logged-out .fp-divider{display:flex;align-items:center;gap:12px;margin:22px 0;color:#888;font-size:12px}
+body.fp-logged-out .fp-auth-switch{color:#bbb;font-size:13px}
+body.fp-logged-out .fp-auth-switch button{color:#fff}
+@media(max-width:480px){body.fp-logged-out .modal{padding:24px 20px;border-radius:22px}}
+
 </style>
 
 <style>
-.fp-auth{max-width:360px;margin:0 auto;font-size:14px}
+.fp-auth{max-width:440px;margin:0 auto;font-size:15px}.fp-auth input{width:100%;box-sizing:border-box}.fp-auth .glassbtn{min-height:52px}.fp-oauth{display:grid;grid-template-columns:1fr;gap:12px}.fp-oauth button{width:100%;min-height:62px;display:flex;align-items:center;justify-content:center;gap:14px;font-size:16px;font-weight:600}.fp-oauth svg{width:25px;height:25px;flex-shrink:0}
 .fp-auth-sub{margin:0 0 16px;color:var(--muted,#888);font-size:13px}
 .fp-auth label{display:block;margin:10px 0 5px;font-size:12px}
 .fp-auth .field{box-sizing:border-box;width:100%;min-height:40px;margin:0 0 3px}
@@ -104,12 +128,13 @@ html[data-theme=light]{color-scheme:light;--bg:#efeff1;--fg:#171719;--muted:#777
 .fp-auth-switch button{border:0;background:none;color:inherit;text-decoration:underline;font-weight:600}
 </style>
 
+<link rel="stylesheet" href="/frog.css">
 </head>
 <body>
-<div class="app"><div class="ambient"></div>
+<div class="app"><div class="frog-mascot" aria-hidden="true">🐸</div><div class="ambient"></div>
 <header class="topbar">
  <div class="topside"><button class="glassbtn" id="menuBtn" aria-label="Open menu" title="Menu"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1" fill="currentColor" stroke="none"/></svg></button><div class="brand"><div class="mark"><svg viewBox="0 0 24 24"><path d="M5 17 12 4l7 13M8 13h8M7 19h10" stroke="currentColor" fill="none" stroke-width="1.5" stroke-linecap="round"/></svg></div>ForgePilot<span class="brandnote">AI WORKSPACE</span></div></div>
- <div class="topside"><button class="glassbtn" id="workspaceBtn" aria-label="Open workspace and history" title="Workspace / history"><svg viewBox="0 0 24 24"><path d="M8 5 3 12l5 7M16 5l5 7-5 7M14 3l-4 18"/></svg></button></div>
+ <div class="topside"><button class="glassbtn" id="fpTopLogin" type="button">Log in</button><button class="glassbtn" id="fpTopSignup" type="button">Sign up</button><button class="glassbtn" id="workspaceBtn" aria-label="Open workspace and history" title="Workspace / history"><svg viewBox="0 0 24 24"><path d="M8 5 3 12l5 7M16 5l5 7-5 7M14 3l-4 18"/></svg></button></div>
 </header>
 <main class="stage"><section class="conversation" id="conversation"><div class="inner" id="inner">
  <section class="welcome" id="welcome"><div class="welcome-orb"><svg viewBox="0 0 24 24"><path d="M5 17 12 4l7 13M8 13h8M7 20h10"/></svg></div><h1>What are we<br><span>building today?</span></h1><p>A quiet space for clear thinking, sharper code, and turning complex ideas into working software.</p><div class="suggestions"><button class="suggestion" data-prompt="Help me plan a new software project from idea to first working version."><b>Plan a project</b><span>Turn an idea into a clear build plan</span></button><button class="suggestion" data-prompt="Review this code for bugs, security issues, and improvements. Ask me to attach or paste the code."><b>Review my code</b><span>Find bugs and improve quality</span></button><button class="suggestion" data-prompt="Explain this error and help me debug it step by step."><b>Fix an error</b><span>Trace a problem to its root cause</span></button><button class="suggestion" data-prompt="Help me design a polished, responsive user interface with a distinctive visual system."><b>Design an interface</b><span>Create a thoughtful UI system</span></button></div></section>
@@ -231,7 +256,7 @@ $('#attachBtn').onclick=()=>$('#fileInput').click();
 $('#fileInput').onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>500000){toast('Please attach a file under 500 KB');return}selectedFile=f;$('#attachedName').textContent=f.name;$('#attachrow').hidden=false;updateSend();if(/\.(png|jpe?g|webp|gif|pdf|zip)$/i.test(f.name))toast('File selected; text files work best in this preview');else toast('File attached')};
 $('#removeFile').onclick=()=>{selectedFile=null;$('#fileInput').value='';$('#attachrow').hidden=true;updateSend()};
 $('#micBtn').onclick=()=>{const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){toast('Voice input is not supported by this browser');return}const r=new SR();r.lang='en-US';r.onresult=e=>{draft.value+=(draft.value?' ':'')+e.results[0][0].transcript;updateSend()};r.onerror=()=>toast('Could not capture voice');r.start()};
-$('#chatForm').onsubmit=async e=>{e.preventDefault();let text=draft.value.trim();if(!text&&!selectedFile)return;let fileText='';if(selectedFile&&selectedFile.size<500000&&!/\.(png|jpe?g|webp|gif|pdf|zip)$/i.test(selectedFile.name)){try{fileText=await selectedFile.text()}catch{}}if(selectedFile)text=(text?text+'\n\n':'')+'[Attached file: '+selectedFile.name+']'+(fileText?'\n\nFile contents:\n'+fileText:'');if(!text)return;
+$('#chatForm').onsubmit=async e=>{e.preventDefault();if(!fpSession?.access_token){showAuth('login');return;}let text=draft.value.trim();if(!text&&!selectedFile)return;let fileText='';if(selectedFile&&selectedFile.size<500000&&!/\.(png|jpe?g|webp|gif|pdf|zip)$/i.test(selectedFile.name)){try{fileText=await selectedFile.text()}catch{}}if(selectedFile)text=(text?text+'\n\n':'')+'[Attached file: '+selectedFile.name+']'+(fileText?'\n\nFile contents:\n'+fileText:'');if(!text)return;
 if(!currentId)currentId=String(Date.now());welcome.hidden=true;messagesEl.hidden=false;renderMessage('user',text);draft.value='';draft.style.height='auto';selectedFile=null;$('#fileInput').value='';$('#attachrow').hidden=true;updateSend();closePanels();
 const wait=document.createElement('article');wait.className='message assistant';wait.innerHTML='<div class="assistant-mark"><svg viewBox="0 0 24 24"><path d="M5 17 12 4l7 13M8 13h8M7 20h10"/></svg></div><div class="bubble"><div class="typing"><i></i><i></i><i></i></div></div>';messagesEl.append(wait);scrollBottom();
 try{const resp=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json',...(fpSession?.access_token?{'Authorization':'Bearer '+fpSession.access_token}:{})},body:JSON.stringify({message:text,messages:currentMessages.map(m=>({role:m.role,content:m.content})),model:'openrouter/free'})});let data={};try{data=await resp.json()}catch{}wait.remove();if(!resp.ok)throw new Error(data.error||'Request failed ('+resp.status+')');renderMessage('assistant',data.reply);persist()}catch(err){wait.remove();renderMessage('assistant','I could not get a response: '+(err.message||'Unknown error')+'\n\nCheck that the local server is running and /api/health is online.');persist()}scrollBottom()};
@@ -244,14 +269,17 @@ let fpAuthMode = "login";
 let fpAuthConfig = null;
 let fpSession = null;
 try { fpSession = JSON.parse(localStorage.getItem("fp_auth_session") || "null"); } catch {}
-fetch("/api/config").then(r=>r.json()).then(c=>fpAuthConfig=c).catch(()=>{});
+document.body.classList.toggle("fp-logged-out", !fpSession?.access_token);
+const fpConfigReady = fetch("/api/config").then(r=>{if(!r.ok)throw new Error("Config request failed");return r.json()}).then(c=>{fpAuthConfig=c;return c});
+try{const h=new URLSearchParams(location.hash.slice(1));const token=h.get("access_token");if(token){fpSession={access_token:token,refresh_token:h.get("refresh_token")||""};localStorage.setItem("fp_auth_session",JSON.stringify(fpSession));document.body.classList.remove("fp-logged-out");history.replaceState(null,"",location.pathname+location.search);}}catch(e){}
 
-function showAuth(mode="login") {
+async function showAuth(mode="login") {
+  try { await fpConfigReady; } catch(e) { console.error("Config load failed:", e); }
   fpAuthMode = mode;
   const signup = mode === "signup";
-  modal(signup ? "Create account" : "Welcome back", `
+  modal(signup ? "Create your account" : "Welcome to ForgePilot", `
     <div class="fp-auth">
-      <p class="fp-auth-sub">${signup ? "Create your free account" : "Log in to continue"}</p>
+      <h2 class="fp-welcome-heading">Welcome to ForgePilot</h2><p class="fp-auth-sub">Sign in or create an account to get started.</p>
       ${signup ? `<label for="fpName">Name</label><input class="field" id="fpName" autocomplete="name" placeholder="Your name">` : ""}
       <label for="fpEmail">Email</label>
       <input class="field" id="fpEmail" type="email" autocomplete="email" placeholder="you@example.com" required>
@@ -262,8 +290,8 @@ function showAuth(mode="login") {
       <button class="primary fp-auth-submit" id="fpAuthSubmit">${signup ? "Create account" : "Log in"}</button>
       <div class="fp-divider"><span>or continue with</span></div>
       <div class="fp-oauth">
-        <button type="button" class="glassbtn" id="fpGoogle">Google</button>
-        <button type="button" class="glassbtn" id="fpGithub">GitHub</button>
+        <button type="button" class="glassbtn" id="fpGoogle"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M43.6 24.5c0-1.4-.1-2.7-.4-4H24v7.6h11.0c-.5 2.5-1.9 4.6-4.1 6v5h6.6c3.9-3.6 6.1-8.7 6.1-14.6z"/><path fill="#34A853" d="M24 44c5.5 0 10.1-1.8 13.5-4.9l-6.6-5c-1.8 1.2-4.1 2-6.9 2-5.3 0-9.8-3.6-11.4-8.4H5.8v5.2A20 20 0 0 0 24 44z"/><path fill="#FBBC05" d="M12.6 27.7a12 12 0 0 1 0-7.4v-5.2H5.8a20 20 0 0 0 0 17.8z"/><path fill="#EA4335" d="M24 12.1c3 0 5.7 1 7.8 3.1l5.8-5.8C34.1 6.1 29.5 4 24 4A20 20 0 0 0 5.8 15.1l6.8 5.2C14.2 15.7 18.7 12.1 24 12.1z"/></svg>Continue with Google</button>
+        <button type="button" class="glassbtn" id="fpGithub"><svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 .9a11.1 11.1 0 0 0-3.5 21.6c.6.1.8-.3.8-.6v-2.1c-3.1.7-3.8-1.3-3.8-1.3-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.71.1.1 1.7 1.2 1.7 1.2 1 1.7 2.6 1.2 3.3.9.1-.7.4-1.2.7-1.5-2.5-.3-5.1-1.3-5.1-5.5 0-1.2.4-2.2 1.2-3-.1-.3-.5-1.4.1-2.9 0 0 1-.3 3.1 1.2a10.7 10.7 0 0 1 5.7 0C17.1 5 18.1 5.3 18.1 5.3c.6 1.5.2 2.6.1 2.9.8.8 1.2 1.8 1.2 3 0 4.2-2.6 5.2-5.1 5.5.4.4.8 1 .8 2v3.2c0 .3.2.7.8.6A11.1 11.1 0 0 0 12 .9z"/></svg>Continue with GitHub</button>
       </div>
       <p class="fp-auth-switch">${signup ? "Already have an account?" : "Don't have an account?"} <button type="button" id="fpAuthSwitch">${signup ? "Log in" : "Sign up"}</button></p>
     </div>
@@ -285,9 +313,36 @@ function showAuth(mode="login") {
     return d;
   }
 
+  let fpOtpMode = false;
+  let fpPendingEmail = "";
+
   $("#fpAuthSubmit").onclick = async () => {
     const email = $("#fpEmail").value.trim();
     const password = $("#fpPassword").value;
+
+    if (fpOtpMode) {
+      const otp = $("#fpOtp")?.value.trim() || "";
+      if (!/^\d{6}$/.test(otp)) {
+        status.textContent = "Enter the 6-digit code from your email.";
+        return;
+      }
+      status.textContent = "Verifying code...";
+      try {
+        const data = await authRequest("/auth/v1/verify", {
+          email: fpPendingEmail, token: otp, type: "signup"
+        });
+        if (!data.access_token) throw new Error("Code verified but no session returned. Please log in.");
+        fpSession = data;
+        localStorage.setItem("fp_auth_session", JSON.stringify(data));
+        document.body.classList.remove("fp-logged-out");
+        document.getElementById("modalback").classList.remove("show");
+        $("#fpAuthDone").onclick = () => $("#modalback").classList.remove("show");
+      } catch (err) {
+        status.textContent = err.message || "OTP verification failed.";
+      }
+      return;
+    }
+
     if (!email || password.length < 6) {
       status.textContent = "Enter your email and a password with at least 6 characters.";
       return;
@@ -296,6 +351,7 @@ function showAuth(mode="login") {
       status.textContent = "Passwords do not match.";
       return;
     }
+
     status.textContent = "Please wait...";
     try {
       const data = await authRequest(
@@ -304,14 +360,22 @@ function showAuth(mode="login") {
           ? {email, password, data:{full_name:$("#fpName").value.trim()}}
           : {email, password}
       );
+
       if (signup && !data.access_token) {
-        status.textContent = "Account created. Check your email to confirm, then log in.";
+        fpOtpMode = true;
+        fpPendingEmail = email;
+        status.insertAdjacentHTML("beforebegin",
+          '<label for="fpOtp">Email verification code</label><input class="field" id="fpOtp" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="Enter 6-digit OTP">');
+        $("#fpAuthSubmit").textContent = "Verify OTP";
+        status.textContent = "Check your email for the 6-digit code. If no code arrives, check Supabase email settings.";
         return;
       }
-      if (!data.access_token) throw new Error("No session returned. Check email confirmation settings.");
+
+      if (!data.access_token) throw new Error("No session returned. Check Supabase email confirmation settings.");
       fpSession = data;
       localStorage.setItem("fp_auth_session", JSON.stringify(data));
-      modal("You're signed in", "<p>Account connected successfully.</p><button class='primary' id='fpAuthDone'>Continue</button>");
+      document.body.classList.remove("fp-logged-out");
+      document.getElementById("modalback").classList.remove("show");
       $("#fpAuthDone").onclick = () => $("#modalback").classList.remove("show");
     } catch (err) {
       status.textContent = err.message || "Authentication failed.";
@@ -339,7 +403,10 @@ function showAuth(mode="login") {
     };
   }
 }
-$('#accountBtn').onclick=()=>{closePanels();showAuth("login")};
+$("#accountBtn").onclick=()=>{closePanels();showAuth("login")};
+$("#fpTopLogin").onclick=()=>showAuth("login");
+$("#fpTopSignup").onclick=()=>showAuth("signup");
+if (!fpSession?.access_token) showAuth("login");
 $('#planBtn').onclick=()=>{closePanels();modal('Plans & usage','<p>This is a local preview. Usage limits, subscriptions and billing are not connected yet. No plan or payment will be charged from this screen.</p>')};
 $('#settingsBtn').onclick=()=>{closePanels();modal('Settings','<p><b>Appearance</b><br>Switch between light and dark liquid-glass themes from the menu.</p><p><b>Privacy</b><br>Chat history is saved in this browser’s local storage. Clear site data to remove it from this device.</p><p><b>AI provider</b><br>Replies use the model configured by your local server.</p>')};
 $('#searchChats').onclick=()=>{closePanels();modal('Search conversations','<input class="field" id="searchInput" placeholder="Search saved chats..."><div id="searchResults"></div>');$('#searchInput').oninput=e=>{let q=e.target.value.toLowerCase();let hits=chats.filter(c=>(c.title||'').toLowerCase().includes(q));$('#searchResults').innerHTML='';hits.forEach(c=>{let b=document.createElement('button');b.className='historyitem';b.textContent=c.title;b.onclick=()=>{$('#modalback').classList.remove('show');loadChat(c.id)};$('#searchResults').append(b)})}};
