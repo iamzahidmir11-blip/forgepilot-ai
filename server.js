@@ -59,6 +59,21 @@ app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), async
 });
 app.use(express.json({ limit: "1mb", strict: true }));
 app.use(express.static("public"));
+
+app.use((req, res, next) => {
+  if (req.method !== "POST" || req.path === "/api/stripe/webhook") return next();
+  const origin = req.headers.origin;
+  if (!origin) return next(); // Bearer-token clients and Stripe webhook clients may omit Origin.
+  let allowed = false;
+  try {
+    const parsed = new URL(origin);
+    const configured = new URL(process.env.APP_URL || `https://${req.headers.host}`);
+    allowed = parsed.origin === configured.origin ||
+      (process.env.NODE_ENV !== "production" && ["localhost", "127.0.0.1"].includes(parsed.hostname));
+  } catch {}
+  if (!allowed) return res.status(403).json({ error: "Cross-origin request blocked." });
+  next();
+});
 app.use("/api/connectors", connectorRoutes);
 app.get("/api/config", rateLimit({ windowMs: 60000, max: 60 }), (_req, res) => {
   res.json({
