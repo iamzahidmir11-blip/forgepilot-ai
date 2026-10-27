@@ -1,2 +1,16 @@
+# Secrets and local environment
 .env
+.env.*
+!.env.example
+!.env.template
+
+# Dependencies and build output
 node_modules/
+coverage/
+dist/
+build/
+
+# Logs and local data
+*.log
+npm-debug.log*
+.DS_Store
