@@ -28,6 +28,16 @@ html[data-theme=light]{color-scheme:light;--bg:#efeff1;--fg:#171719;--muted:#777
 @media(max-width:600px){.topbar{height:65px;padding:0 13px}.stage{height:auto;flex:1 1 0;min-height:0}.brandnote{display:none}.conversation{padding:0 15px}.welcome{padding:25px 0}.welcome-orb{width:62px;height:62px;border-radius:22px;margin-bottom:23px}.welcome h1{letter-spacing:-1.6px}.welcome p{font-size:13px;margin:13px 0 23px}.suggestions{grid-template-columns:1fr}.suggestion{padding:12px 14px}.suggestion span{display:block}.composer-wrap{padding:7px 11px max(11px,env(safe-area-inset-bottom))}.composer{border-radius:22px}.modelpill{max-width:115px;font-size:10px}.messages{gap:24px;padding-top:20px}.text{font-size:13px}.message.user .bubble{max-width:90%}.panel{top:8px;bottom:8px}.panel.left{left:8px}.panel.right{right:8px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
+/* Authenticated header state: never show login/signup after session is active */
+body:not(.fp-logged-out) #fpTopLogin,
+body:not(.fp-logged-out) #fpTopSignup{display:none!important}
+@media(max-width:600px){
+  .topbar{gap:8px}
+  .topside{gap:8px}
+  .brand{white-space:nowrap}
+  .topside #workspaceBtn{flex:0 0 42px}
+}
+
 /* Premium AI reply styling */
 .text{font-size:15px;line-height:1.85;overflow-wrap:anywhere;word-break:normal}
 .text p{margin:0 0 15px}
