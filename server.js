@@ -18,7 +18,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 async function verifySupabaseToken(req, res, next) {
-  const token = (req.headers.authorization || "").replace(/^Bearer\\s+/i, "");
+  const token = (req.headers.authorization || "").replace(/^Bearer\s+/i, "");
   if (!token) return res.status(401).json({ error: "Please sign in first." });
   try {
     const r = await fetch(process.env.SUPABASE_URL + "/auth/v1/user", {
