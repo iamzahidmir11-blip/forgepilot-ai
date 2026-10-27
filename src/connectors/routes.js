@@ -10,19 +10,7 @@ router.get("/github/status", (_req, res) => {
 });
 
 router.get("/github/connect", (_req, res) => {
-  if (!process.env.GITHUB_CLIENT_ID || !process.env.GITHUB_CLIENT_SECRET) {
-    return res.status(503).json({ error: "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, and APP_URL on the server first." });
-  }
-  const callbackUrl = new URL("/api/connectors/github/callback", process.env.APP_URL || "http://localhost:3000").toString();
-  const state = crypto.randomUUID();
-  // Store state in a short-lived, HTTP-only cookie; the OAuth callback is implemented separately.
-  res.cookie("fp_github_oauth_state", state, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 10 * 60 * 1000 });
-  const url = new URL("https://github.com/login/oauth/authorize");
-  url.searchParams.set("client_id", process.env.GITHUB_CLIENT_ID);
-  url.searchParams.set("redirect_uri", callbackUrl);
-  url.searchParams.set("scope", "read:user repo");
-  url.searchParams.set("state", state);
-  return res.redirect(url.toString());
+  return res.status(503).json({ error: "GitHub OAuth callback and secure token storage are not implemented yet. This connector will remain disconnected until that flow is completed." });
 });
 
 router.get("/supabase/status", (_req, res) => {
