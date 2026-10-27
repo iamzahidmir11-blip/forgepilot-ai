@@ -120,6 +120,34 @@ body.fp-logged-out .fp-auth-switch{color:#bbb;font-size:13px}
 body.fp-logged-out .fp-auth-switch button{color:#fff}
 @media(max-width:480px){body.fp-logged-out .modal{padding:24px 20px;border-radius:22px}}
 
+
+/* FrogePilot-inspired glass interface refresh; keep existing working app wiring */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@200;300;400;500;600;700&display=swap');
+:root{font-family:'Sora',system-ui,-apple-system,'Segoe UI',sans-serif;--bg:#04050b;--fg:#f5f7ff;--muted:rgba(232,238,255,.62);--line:rgba(255,255,255,.16);--glass:rgba(255,255,255,.075);--glass2:rgba(255,255,255,.12);--solid:rgba(12,13,22,.78);--input:rgba(255,255,255,.055);--shadow:inset 0 1.5px 0 rgba(255,255,255,.28),0 22px 55px rgba(0,0,0,.42);--blur:blur(30px)}
+html[data-theme=light]{--bg:#f1f4fc;--fg:#12162e;--muted:#5e6486;--line:rgba(11,14,34,.12);--glass:rgba(255,255,255,.7);--glass2:rgba(255,255,255,.9);--solid:rgba(255,255,255,.8);--input:rgba(255,255,255,.85);--shadow:inset 0 1.5px 0 #fff,0 12px 40px rgba(60,80,140,.16)}
+body{background:var(--bg)}
+.app{background:radial-gradient(ellipse at 20% 20%,rgba(255,255,255,.12),transparent 38%),radial-gradient(ellipse at 80% 25%,rgba(130,160,255,.15),transparent 40%),radial-gradient(ellipse at 60% 90%,rgba(180,150,255,.11),transparent 42%),var(--bg)}
+.ambient:before,.ambient:after{opacity:.28;filter:blur(90px);animation:fpFloat 18s ease-in-out infinite alternate}
+.ambient:after{animation-delay:-8s}
+@keyframes fpFloat{to{transform:translate(5vw,-4vh) scale(1.18)}}
+.brand,.paneltitle{font-family:'Sora',sans-serif}
+.mark,.glassbtn,.welcome-orb,.suggestion,.composer,.panel,.modelpill,.message.user .bubble{backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%)}
+.mark,.welcome-orb{background:linear-gradient(145deg,rgba(255,255,255,.2),rgba(255,255,255,.035) 55%,rgba(255,255,255,.1));box-shadow:inset 0 1.5px 0 rgba(255,255,255,.4),inset 0 -1px 0 rgba(255,255,255,.12),0 18px 45px rgba(0,0,0,.28)}
+.welcome h1{font-family:'Sora',sans-serif;font-weight:300;letter-spacing:-2.1px}
+.welcome h1 span{color:var(--muted)}
+.welcome p{font-size:14px;max-width:420px}
+.suggestion{border-radius:22px;background:linear-gradient(145deg,rgba(255,255,255,.11),rgba(255,255,255,.035));box-shadow:inset 0 1px 0 rgba(255,255,255,.12);padding:16px}
+.suggestion:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.3)}
+.composer{border-radius:30px;background:linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.035));border-color:rgba(255,255,255,.2);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.17),0 18px 45px rgba(0,0,0,.25)}
+.composer:focus-within{border-color:rgba(255,255,255,.38);box-shadow:inset 0 1px rgba(255,255,255,.2),0 0 0 3px rgba(255,255,255,.035),0 18px 45px rgba(0,0,0,.25)}
+.modelpill{border-radius:999px;padding:9px 12px;background:rgba(255,255,255,.08);max-width:180px}
+.send{border-radius:15px;box-shadow:inset 0 1.5px 0 rgba(255,255,255,.8),0 8px 25px rgba(255,255,255,.14)}
+.panel{border-radius:30px;background:color-mix(in srgb,var(--solid) 78%,transparent)}
+.historyitem,.menuitem{border-radius:15px}
+/* Mobile browser safe-area and header wrapping fixes */
+@media(max-width:600px){.topbar{height:66px;padding-inline:14px;gap:8px}.topside{gap:8px}.brandnote{display:none}.brand{font-size:14px}.glassbtn{width:39px;height:39px;border-radius:14px}.welcome{padding:25px 0 28px}.welcome-orb{margin-bottom:20px}.welcome h1{letter-spacing:-1.5px}.suggestions{grid-template-columns:1fr;gap:8px}.suggestion{padding:13px 14px}.composer-wrap{padding:8px 12px max(12px,env(safe-area-inset-bottom))}.composer{border-radius:25px}.draft{min-height:46px}.modelpill{max-width:145px}}
+@media(prefers-reduced-motion:reduce){.ambient:before,.ambient:after{animation:none!important}}
+
 </style>
 
 <style>
