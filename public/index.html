@@ -256,6 +256,7 @@ body.fp-logged-out .fp-auth-submit{border-radius:12px}
 }
 </style>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="app"><div class="frog-mascot" aria-hidden="true">🐸</div><div class="ambient"></div>
@@ -397,8 +398,34 @@ let fpAuthConfig = null;
 let fpSession = null;
 try { fpSession = JSON.parse(localStorage.getItem("fp_auth_session") || "null"); } catch {}
 document.body.classList.toggle("fp-logged-out", !fpSession?.access_token);
-const fpConfigReady = fetch("/api/config").then(r=>{if(!r.ok)throw new Error("Config request failed");return r.json()}).then(c=>{fpAuthConfig=c;return c});
-try{const h=new URLSearchParams(location.hash.slice(1));const token=h.get("access_token");if(token){fpSession={access_token:token,refresh_token:h.get("refresh_token")||""};localStorage.setItem("fp_auth_session",JSON.stringify(fpSession));document.body.classList.remove("fp-logged-out");history.replaceState(null,"",location.pathname+location.search);}}catch(e){}
+let fpSupabase = null;
+const fpConfigReady = fetch("/api/config").then(r=>{if(!r.ok)throw new Error("Config request failed");return r.json()}).then(async c=>{
+  fpAuthConfig=c;
+  if (!window.supabase?.createClient || !c.supabaseUrl || !c.supabasePublishableKey) throw new Error("Supabase OAuth client is not configured.");
+  fpSupabase=window.supabase.createClient(c.supabaseUrl,c.supabasePublishableKey,{
+    auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:"pkce"}
+  });
+  const {data,error}=await fpSupabase.auth.getSession();
+  if(error) throw error;
+  if(data.session){
+    fpSession=data.session;
+    localStorage.setItem("fp_auth_session",JSON.stringify(fpSession));
+    document.body.classList.remove("fp-logged-out");
+  }
+  fpSupabase.auth.onAuthStateChange((_event,session)=>{
+    fpSession=session;
+    if(session){
+      localStorage.setItem("fp_auth_session",JSON.stringify(session));
+      document.body.classList.remove("fp-logged-out");
+      $("#modalback")?.classList.remove("show");
+    }else{
+      localStorage.removeItem("fp_auth_session");
+      document.body.classList.add("fp-logged-out");
+    }
+  });
+  return c;
+});
+// Supabase JS handles the OAuth callback (PKCE code exchange and session persistence).
 
 async function ensureValidSession() {
   if (!fpSession?.access_token) return false;
@@ -511,16 +538,25 @@ async function showAuth(mode="login") {
     }
   };
 
-  $("#fpGoogle").onclick = () => {
-    if (!base || !key) { status.textContent = "Supabase config missing."; return; }
-    const redirect = location.origin + location.pathname;
-    location.href = base + "/auth/v1/authorize?provider=google&redirect_to=" + encodeURIComponent(redirect) + "&apikey=" + encodeURIComponent(key);
-  };
-  $("#fpGithub").onclick = () => {
-    if (!base || !key) { status.textContent = "Supabase config missing."; return; }
-    const redirect = location.origin + location.pathname;
-    location.href = base + "/auth/v1/authorize?provider=github&redirect_to=" + encodeURIComponent(redirect) + "&apikey=" + encodeURIComponent(key);
-  };
+  async function startOAuth(provider,button){
+    if(!status)return;
+    button.disabled=true;
+    status.textContent="Connecting to "+(provider==="google"?"Google":"GitHub")+"...";
+    try{
+      await fpConfigReady;
+      if(!fpSupabase)throw new Error("Supabase is not configured. Check Render environment settings.");
+      const {error}=await fpSupabase.auth.signInWithOAuth({
+        provider,
+        options:{redirectTo:location.origin+location.pathname,skipBrowserRedirect:false}
+      });
+      if(error)throw error;
+    }catch(err){
+      status.textContent=err.message||"Could not start social sign-in.";
+      button.disabled=false;
+    }
+  }
+  $("#fpGoogle").onclick=()=>startOAuth("google",$("#fpGoogle"));
+  $("#fpGithub").onclick=()=>startOAuth("github",$("#fpGithub"));
   if (!signup) {
     $("#fpForgot").onclick = async () => {
       const email = $("#fpEmail").value.trim();
@@ -535,7 +571,12 @@ async function showAuth(mode="login") {
 $("#accountBtn").onclick=()=>{closePanels();showAuth("login")};
 $("#fpTopLogin").onclick=()=>showAuth("login");
 $("#fpTopSignup").onclick=()=>showAuth("signup");
-if (!fpSession?.access_token) showAuth("login");
+fpConfigReady.then(()=>{
+  if(!fpSession?.access_token)showAuth("login");
+}).catch(err=>{
+  console.error("Auth initialization failed:",err);
+  if(!fpSession?.access_token)showAuth("login");
+});
 $('#planBtn').onclick=()=>{closePanels();modal('Plans & usage','<p>This is a local preview. Usage limits, subscriptions and billing are not connected yet. No plan or payment will be charged from this screen.</p>')};
 $('#settingsBtn').onclick=()=>{closePanels();modal('Settings','<p><b>Appearance</b><br>Switch between light and dark liquid-glass themes from the menu.</p><p><b>Privacy</b><br>Chat history is saved in this browser’s local storage. Clear site data to remove it from this device.</p><p><b>AI provider</b><br>Replies use the model configured by your local server.</p>')};
 $('#searchChats').onclick=()=>{closePanels();modal('Search conversations','<input class="field" id="searchInput" placeholder="Search saved chats..."><div id="searchResults"></div>');$('#searchInput').oninput=e=>{let q=e.target.value.toLowerCase();let hits=chats.filter(c=>(c.title||'').toLowerCase().includes(q));$('#searchResults').innerHTML='';hits.forEach(c=>{let b=document.createElement('button');b.className='historyitem';b.textContent=c.title;b.onclick=()=>{$('#modalback').classList.remove('show');loadChat(c.id)};$('#searchResults').append(b)})}};
