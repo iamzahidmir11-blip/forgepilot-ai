@@ -140,6 +140,15 @@ async function getPlan(userId) {
   if (row && ["plus","pro"].includes(row.plan) && ["active","trialing"].includes(row.subscription_status)) return row.plan;
   return "free";
 }
+async function refundCredit(userId, periodKey) {
+  try {
+    await supabaseRest("rpc/forgepilot_refund_credit", "POST", {
+      p_user_id: userId, p_period_key: periodKey, p_credit_cost: 1
+    });
+  } catch (error) {
+    console.error("Credit refund failed for user", userId, error?.message || "unknown error");
+  }
+}
 app.get("/api/billing/status", rateLimit({ windowMs: 60000, max: 30 }), verifySupabaseToken, async (req,res) => {
   try {
     const plan = await getPlan(req.authUser.id);
@@ -187,11 +196,11 @@ app.post("/api/chat", rateLimit({ windowMs: 60000, max: 20 }), verifySupabaseTok
     : [{ role: "user", content: message }];
   if (!safeHistory.length || safeHistory[safeHistory.length - 1].role !== "user") safeHistory.push({ role: "user", content: message });
 
-  let plan, usage;
+  let plan, usage, periodKey;
   try {
     plan = await getPlan(req.authUser.id);
     const cfg = PLANS[plan];
-    const periodKey = creditPeriod(plan);
+    periodKey = creditPeriod(plan);
     const creditLimit = cfg.creditLimit === null ? 2147483647 : cfg.creditLimit;
     usage = await supabaseRest("rpc/forgepilot_claim_credits", "POST", {
       p_user_id: req.authUser.id, p_period_key: periodKey, p_credit_cost: 1, p_credit_limit: creditLimit
@@ -221,14 +230,18 @@ app.post("/api/chat", rateLimit({ windowMs: 60000, max: 20 }), verifySupabaseTok
     });
     const raw = await upstream.text(); let data;
     try { data = JSON.parse(raw); } catch { data = {}; }
-    if (!upstream.ok) return res.status(upstream.status >= 400 && upstream.status < 500 ? upstream.status : 502)
-      .json({ error: data?.error?.message || `AI provider returned HTTP ${upstream.status}.` });
+    if (!upstream.ok) {
+      await refundCredit(req.authUser.id, periodKey);
+      return res.status(upstream.status >= 400 && upstream.status < 500 ? upstream.status : 502)
+        .json({ error: data?.error?.message || `AI provider returned HTTP ${upstream.status}.` });
+    }
     const reply = data?.choices?.[0]?.message?.content;
-    if (typeof reply !== "string" || !reply.trim()) return res.status(502).json({ error: "The model returned an empty response. Try again later." });
+    if (typeof reply !== "string" || !reply.trim()) { await refundCredit(req.authUser.id, periodKey); return res.status(502).json({ error: "The model returned an empty response. Your credit was returned; try again later." }); }
     return res.json({ reply });
   } catch (error) {
+    await refundCredit(req.authUser.id, periodKey);
     const timeout = error?.name === "AbortError";
-    return res.status(timeout ? 504 : 502).json({ error: timeout ? "AI provider timed out. Please retry." : "Could not reach AI provider. Check internet and try again." });
+    return res.status(timeout ? 504 : 502).json({ error: timeout ? "AI provider timed out. Your credit was returned; please retry." : "Could not reach AI provider. Your credit was returned; check internet and try again." });
   } finally { clearTimeout(timer); }
 });
 
