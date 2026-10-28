@@ -83,7 +83,7 @@ app.get("/api/config", rateLimit({ windowMs: 60000, max: 60 }), (_req, res) => {
 });
 
 app.get("/api/health", rateLimit({ windowMs: 60000, max: 60 }), (_req, res) => {
-  res.json({ status: "online", provider: "OpenRouter", keyConfigured: Boolean(process.env.OPENROUTER_API_KEY) });
+  res.json({ status: "online", provider: "OpenRouter", keyConfigured: Boolean(process.env.OPENROUTER_API_KEY), authConfigured: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_PUBLISHABLE_KEY), billingDatabaseConfigured: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY), stripeTestConfigured: Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_SECRET_KEY.startsWith("sk_test_")) });
 });
 
 async function verifySupabaseToken(req, res, next) {
@@ -161,7 +161,13 @@ app.get("/api/billing/status", verifySupabaseToken, rateLimit({ windowMs: 60000,
       creditLimit: cfg.creditLimit, creditsRemaining: cfg.creditLimit === null ? null : Math.max(0, cfg.creditLimit - creditsUsed),
       unlimited: cfg.creditLimit === null, features: cfg.features, mode: "test"
     });
-  } catch { res.status(503).json({ error: "Could not load plan and credits. Check server billing configuration." }); }
+  } catch (error) {
+    console.error("Billing status failed:", error?.message || "unknown error");
+    const missing = [];
+    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    res.status(503).json({ error: missing.length ? "Render environment variable missing: " + missing.join(", ") : "Supabase billing database request failed. Check Render logs for the exact database error." });
+  }
 });
 app.post("/api/billing/checkout", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 5, key: req => req.authUser?.id || req.ip }), async (req,res) => {
   const plan = req.body?.plan;
@@ -213,7 +219,13 @@ app.post("/api/chat", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 20,
         creditsRemaining: 0, period: cfg.period
       });
     }
-  } catch { return res.status(503).json({ error: "Could not check your account credits. Please try again shortly." }); }
+  } catch (error) {
+    console.error("Chat credit check failed:", error?.message || "unknown error");
+    const missing = [];
+    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    return res.status(503).json({ error: missing.length ? "Render environment variable missing: " + missing.join(", ") : "Could not check account credits in Supabase. Check Render logs for the exact database error." });
+  }
 
   const allowedModels = new Set(["openrouter/free", "openrouter/auto", "google/gemini-2.5-flash", "deepseek/deepseek-chat-v3-0324:free", "qwen/qwen3-coder:free"]);
   const requestedModel = typeof req.body?.model === "string" ? req.body.model : "openrouter/free";
