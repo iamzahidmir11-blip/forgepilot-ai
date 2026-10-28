@@ -149,7 +149,7 @@ async function refundCredit(userId, periodKey) {
     console.error("Credit refund failed for user", userId, error?.message || "unknown error");
   }
 }
-app.get("/api/billing/status", rateLimit({ windowMs: 60000, max: 30 }), verifySupabaseToken, async (req,res) => {
+app.get("/api/billing/status", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 30, key: req => req.authUser?.id || req.ip }), async (req,res) => {
   try {
     const plan = await getPlan(req.authUser.id);
     const cfg = PLANS[plan];
@@ -163,7 +163,7 @@ app.get("/api/billing/status", rateLimit({ windowMs: 60000, max: 30 }), verifySu
     });
   } catch { res.status(503).json({ error: "Could not load plan and credits. Check server billing configuration." }); }
 });
-app.post("/api/billing/checkout", rateLimit({ windowMs: 60000, max: 5 }), verifySupabaseToken, async (req,res) => {
+app.post("/api/billing/checkout", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 5, key: req => req.authUser?.id || req.ip }), async (req,res) => {
   const plan = req.body?.plan;
   if (!["plus","pro"].includes(plan)) return res.status(400).json({ error: "Choose Plus or Pro." });
   const secret = process.env.STRIPE_SECRET_KEY;
@@ -183,7 +183,7 @@ app.post("/api/billing/checkout", rateLimit({ windowMs: 60000, max: 5 }), verify
   } catch { res.status(502).json({error:"Could not create checkout session. Check Stripe test-mode configuration."}); }
 });
 
-app.post("/api/chat", rateLimit({ windowMs: 60000, max: 20 }), verifySupabaseToken, async (req, res) => {
+app.post("/api/chat", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 20, key: req => req.authUser?.id || req.ip }), async (req, res) => {
   const key = process.env.OPENROUTER_API_KEY;
   const message = typeof req.body?.message === "string" ? req.body.message.trim() : "";
   if (!key) return res.status(503).json({ error: "OPENROUTER_API_KEY is missing from .env." });
