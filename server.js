@@ -108,10 +108,24 @@ async function verifySupabaseToken(req, res, next) {
 
 // Billing configuration. Stripe keys must remain server-side.
 const PLANS = {
-  free: { limit: 20, priceId: null },
-  plus: { limit: 200, priceId: "price_1UVCBwGUzHM6YjX0D9twKhI4" },
-  pro: { limit: 1000, priceId: "price_1UVCByGUzHM6YjX0TVlmNnol" }
+  free: {
+    creditLimit: 100, period: "day", priceId: null,
+    features: ["100 credits daily", "Basic AI chat", "Chat history", "Standard models"]
+  },
+  plus: {
+    creditLimit: 3000, period: "month", priceId: "price_1UVCBwGUzHM6YjX0D9twKhI4",
+    features: ["3,000 credits every month", "More capable AI models", "Longer conversations", "File and code help", "Priority access when available"]
+  },
+  pro: {
+    creditLimit: null, period: "unlimited", priceId: "price_1UVCByGUzHM6YjX0TVlmNnol",
+    features: ["Unlimited credits", "All available AI models", "Long-context assistance", "Advanced coding and file help", "Priority access when available"]
+  }
 };
+function creditPeriod(plan, now = new Date()) {
+  const day = now.toISOString().slice(0, 10);
+  const month = now.toISOString().slice(0, 7);
+  return plan === "plus" ? "plus:" + month : plan === "pro" ? "pro:" + month : "free:" + day;
+}
 async function supabaseRest(path, method, body) {
   const url = process.env.SUPABASE_URL; const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured on the server.");
@@ -129,9 +143,16 @@ async function getPlan(userId) {
 app.get("/api/billing/status", rateLimit({ windowMs: 60000, max: 30 }), verifySupabaseToken, async (req,res) => {
   try {
     const plan = await getPlan(req.authUser.id);
-    const rows = await supabaseRest("forgepilot_daily_usage?user_id=eq." + encodeURIComponent(req.authUser.id) + "&usage_date=eq." + new Date().toISOString().slice(0,10) + "&select=chats_used", "GET");
-    res.json({ plan, dailyLimit: PLANS[plan].limit, chatsUsed: rows[0]?.chats_used || 0, mode: "test" });
-  } catch { res.status(503).json({ error: "Could not load billing status. Check server billing configuration." }); }
+    const cfg = PLANS[plan];
+    const periodKey = creditPeriod(plan);
+    const rows = await supabaseRest("forgepilot_credit_usage?user_id=eq." + encodeURIComponent(req.authUser.id) + "&period_key=eq." + encodeURIComponent(periodKey) + "&select=credits_used", "GET");
+    const creditsUsed = rows[0]?.credits_used || 0;
+    res.json({
+      plan, period: cfg.period, periodKey, creditsUsed,
+      creditLimit: cfg.creditLimit, creditsRemaining: cfg.creditLimit === null ? null : Math.max(0, cfg.creditLimit - creditsUsed),
+      unlimited: cfg.creditLimit === null, features: cfg.features, mode: "test"
+    });
+  } catch { res.status(503).json({ error: "Could not load plan and credits. Check server billing configuration." }); }
 });
 app.post("/api/billing/checkout", rateLimit({ windowMs: 60000, max: 5 }), verifySupabaseToken, async (req,res) => {
   const plan = req.body?.plan;
@@ -169,9 +190,21 @@ app.post("/api/chat", rateLimit({ windowMs: 60000, max: 20 }), verifySupabaseTok
   let plan, usage;
   try {
     plan = await getPlan(req.authUser.id);
-    usage = await supabaseRest("rpc/forgepilot_claim_daily_chat", "POST", { p_user_id: req.authUser.id, p_limit: PLANS[plan].limit });
-    if (!usage?.[0]?.allowed) return res.status(429).json({ error: `Daily chat limit reached (${usage?.[0]?.daily_limit || PLANS[plan].limit}/day). Upgrade your plan or try again tomorrow.`, plan, dailyLimit: usage?.[0]?.daily_limit || PLANS[plan].limit, chatsUsed: usage?.[0]?.chats_used || PLANS[plan].limit });
-  } catch { return res.status(503).json({ error: "Could not check daily usage. Check server billing configuration." }); }
+    const cfg = PLANS[plan];
+    const periodKey = creditPeriod(plan);
+    const creditLimit = cfg.creditLimit === null ? 2147483647 : cfg.creditLimit;
+    usage = await supabaseRest("rpc/forgepilot_claim_credits", "POST", {
+      p_user_id: req.authUser.id, p_period_key: periodKey, p_credit_cost: 1, p_credit_limit: creditLimit
+    });
+    if (!usage?.[0]?.allowed) {
+      const periodLabel = cfg.period === "month" ? "this month" : "today";
+      return res.status(429).json({
+        error: `You have used all ${cfg.creditLimit} credits for ${periodLabel}. Upgrade your plan or wait for your credits to reset.`,
+        plan, creditLimit: cfg.creditLimit, creditsUsed: usage?.[0]?.credits_used || cfg.creditLimit,
+        creditsRemaining: 0, period: cfg.period
+      });
+    }
+  } catch { return res.status(503).json({ error: "Could not check your account credits. Please try again shortly." }); }
 
   const allowedModels = new Set(["openrouter/free", "openrouter/auto", "google/gemini-2.5-flash", "deepseek/deepseek-chat-v3-0324:free", "qwen/qwen3-coder:free"]);
   const requestedModel = typeof req.body?.model === "string" ? req.body.model : "openrouter/free";
