@@ -3,6 +3,8 @@
     <application
         android:allowBackup="false"
         android:label="ForgePilot AI"
+        android:icon="@drawable/ic_forgepilot_logo"
+        android:roundIcon="@drawable/ic_forgepilot_logo"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:usesCleartextTraffic="false">
         <activity
