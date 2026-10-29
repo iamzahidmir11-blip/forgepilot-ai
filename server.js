@@ -108,18 +108,8 @@ async function verifySupabaseToken(req, res, next) {
 
 // Billing configuration. Stripe keys must remain server-side.
 const PLANS = {
-  free: {
-    creditLimit: 100, period: "day", priceId: null,
-    features: ["100 credits daily", "Basic AI chat", "Chat history", "Standard models"]
-  },
-  plus: {
-    creditLimit: 3000, period: "month", priceId: "price_1UVCBwGUzHM6YjX0D9twKhI4",
-    features: ["3,000 credits every month", "More capable AI models", "Longer conversations", "File and code help", "Priority access when available"]
-  },
-  pro: {
-    creditLimit: null, period: "unlimited", priceId: "price_1UVCByGUzHM6YjX0TVlmNnol",
-    features: ["Unlimited credits", "All available AI models", "Long-context assistance", "Advanced coding and file help", "Priority access when available"]
-  }
+  free: { creditLimit: null, period: "unlimited", priceId: null,
+    features: ["Free AI chat", "No daily credit cap", "Chat history", "Available models"] }
 };
 function creditPeriod(plan, now = new Date()) {
   const day = now.toISOString().slice(0, 10);
@@ -149,25 +139,10 @@ async function refundCredit(userId, periodKey) {
     console.error("Credit refund failed for user", userId, error?.message || "unknown error");
   }
 }
-app.get("/api/billing/status", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 30, key: req => req.authUser?.id || req.ip }), async (req,res) => {
-  try {
-    const plan = await getPlan(req.authUser.id);
-    const cfg = PLANS[plan];
-    const periodKey = creditPeriod(plan);
-    const rows = await supabaseRest("forgepilot_credit_usage?user_id=eq." + encodeURIComponent(req.authUser.id) + "&period_key=eq." + encodeURIComponent(periodKey) + "&select=credits_used", "GET");
-    const creditsUsed = rows[0]?.credits_used || 0;
-    res.json({
-      plan, period: cfg.period, periodKey, creditsUsed,
-      creditLimit: cfg.creditLimit, creditsRemaining: cfg.creditLimit === null ? null : Math.max(0, cfg.creditLimit - creditsUsed),
-      unlimited: cfg.creditLimit === null, features: cfg.features, mode: "test"
-    });
-  } catch (error) {
-    console.error("Billing status failed:", error?.message || "unknown error");
-    const missing = [];
-    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-    res.status(503).json({ error: missing.length ? "Render environment variable missing: " + missing.join(", ") : "Supabase billing database request failed. Check Render logs for the exact database error." });
-  }
+app.get("/api/billing/status", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 30, key: req => req.authUser?.id || req.ip }), (_req,res) => {
+  res.json({ plan: "free", period: "unlimited", periodKey: "free:unlimited",
+    creditsUsed: 0, creditLimit: null, creditsRemaining: null, unlimited: true,
+    features: ["Free AI chat", "No daily credit cap", "Chat history", "Available models"], mode: "free" });
 });
 app.post("/api/billing/checkout", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 5, key: req => req.authUser?.id || req.ip }), async (req,res) => {
   const plan = req.body?.plan;
@@ -202,31 +177,7 @@ app.post("/api/chat", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 20,
     : [{ role: "user", content: message }];
   if (!safeHistory.length || safeHistory[safeHistory.length - 1].role !== "user") safeHistory.push({ role: "user", content: message });
 
-  let plan, usage, periodKey;
-  try {
-    plan = await getPlan(req.authUser.id);
-    const cfg = PLANS[plan];
-    periodKey = creditPeriod(plan);
-    const creditLimit = cfg.creditLimit === null ? 2147483647 : cfg.creditLimit;
-    usage = await supabaseRest("rpc/forgepilot_claim_credits", "POST", {
-      p_user_id: req.authUser.id, p_period_key: periodKey, p_credit_cost: 1, p_credit_limit: creditLimit
-    });
-    if (!usage?.[0]?.allowed) {
-      const periodLabel = cfg.period === "month" ? "this month" : "today";
-      return res.status(429).json({
-        error: `You have used all ${cfg.creditLimit} credits for ${periodLabel}. Upgrade your plan or wait for your credits to reset.`,
-        plan, creditLimit: cfg.creditLimit, creditsUsed: usage?.[0]?.credits_used || cfg.creditLimit,
-        creditsRemaining: 0, period: cfg.period
-      });
-    }
-  } catch (error) {
-    console.error("Chat credit check failed:", error?.message || "unknown error");
-    const missing = [];
-    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-    return res.status(503).json({ error: missing.length ? "Render environment variable missing: " + missing.join(", ") : "Could not check account credits in Supabase. Check Render logs for the exact database error." });
-  }
-
+  // Free mode: no plan lookup or daily/monthly credit checks.
   const allowedModels = new Set(["openrouter/free", "openrouter/auto", "google/gemini-2.5-flash", "deepseek/deepseek-chat-v3-0324:free", "qwen/qwen3-coder:free"]);
   const requestedModel = typeof req.body?.model === "string" ? req.body.model : "openrouter/free";
   const model = allowedModels.has(requestedModel) ? requestedModel : "openrouter/free";
@@ -243,15 +194,13 @@ app.post("/api/chat", verifySupabaseToken, rateLimit({ windowMs: 60000, max: 20,
     const raw = await upstream.text(); let data;
     try { data = JSON.parse(raw); } catch { data = {}; }
     if (!upstream.ok) {
-      await refundCredit(req.authUser.id, periodKey);
       return res.status(upstream.status >= 400 && upstream.status < 500 ? upstream.status : 502)
         .json({ error: data?.error?.message || `AI provider returned HTTP ${upstream.status}.` });
     }
     const reply = data?.choices?.[0]?.message?.content;
-    if (typeof reply !== "string" || !reply.trim()) { await refundCredit(req.authUser.id, periodKey); return res.status(502).json({ error: "The model returned an empty response. Your credit was returned; try again later." }); }
+    if (typeof reply !== "string" || !reply.trim()) { return res.status(502).json({ error: "The model returned an empty response. Your credit was returned; try again later." }); }
     return res.json({ reply });
   } catch (error) {
-    await refundCredit(req.authUser.id, periodKey);
     const timeout = error?.name === "AbortError";
     return res.status(timeout ? 504 : 502).json({ error: timeout ? "AI provider timed out. Your credit was returned; please retry." : "Could not reach AI provider. Your credit was returned; check internet and try again." });
   } finally { clearTimeout(timer); }
